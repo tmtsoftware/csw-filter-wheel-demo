@@ -4,7 +4,7 @@ import scalajsbundler.sbtplugin.ScalaJSBundlerPlugin.autoImport.npmDependencies
 lazy val `demo-assembly` = project
   .settings(
     libraryDependencies ++= Dependencies.`demo-assembly-deps`
-  )
+  ).dependsOn(`demo-hcd`)
 
 lazy val `demo-hcd` = project
   .settings(
