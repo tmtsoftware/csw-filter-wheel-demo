@@ -3,7 +3,7 @@ package org.tmt.test.demohcd
 import csw.messages.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnsupportedCommandIssue}
 import csw.messages.commands.CommandResponse.Error
 import csw.messages.commands.{CommandName, CommandResponse, ControlCommand, Setup}
-import csw.messages.location.TrackingEvent
+import csw.messages.location.{ComponentId, ComponentType, TrackingEvent}
 import csw.messages.params.generics.{Key, KeyType}
 
 import scala.async.Async.async
@@ -15,6 +15,7 @@ import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
 import csw.messages.TopLevelActorMessage
 import csw.messages.events.{EventKey, EventName}
 import csw.messages.framework.ComponentInfo
+import csw.messages.location.Connection.AkkaConnection
 import csw.messages.params.models.Prefix
 import csw.messages.params.states.StateName
 import csw.services.alarm.api.scaladsl.AlarmService
@@ -56,6 +57,8 @@ object FilterHcd {
 
   // For callers: Must match config file
   val filterPrefix = Prefix("test.filterhcd")
+
+  val filterConnection = AkkaConnection(ComponentId("FilterHcd", ComponentType.HCD))
 
   val filterStateName = StateName("FilterState")
 

@@ -117,12 +117,13 @@ object DemoAssemblyTestClient extends App {
 
   private def makeSetup(filter: String, disperser: String): Setup = {
     val i1 = filterKey.set(filter)
-    val i2 = disperserKey.set(filter)
+    val i2 = disperserKey.set(disperser)
     Setup(demoPrefix, demoCmd, Some(obsId)).add(i1).add(i2)
   }
 
   private def interact(ctx: ActorContext[TrackingEvent], assembly: CommandService): Unit = {
-    val setups = (1 to 8).toList.map(i => makeSetup(filters(i), dispersers(i)))
+    val n      = math.min(filters.size, dispersers.size)
+    val setups = (0 until n).toList.map(i => makeSetup(filters(i), dispersers(i)))
     submitAll(setups, assembly).onComplete {
       case Success(responses) => println(s"Test Passed: Responses = $responses")
       case Failure(ex)        => println(s"Test Failed: $ex")

@@ -100,11 +100,13 @@ class DemoAssemblyHandlers(
     trackingEvent match {
       case LocationUpdated(location) =>
         val loc = location.asInstanceOf[AkkaLocation]
-        loc.connection.name match {
-          case "FilterHcd" =>
+        loc.connection match {
+          case `filterConnection` =>
             maybeFilterHcd = Some(new CommandService(loc)(ctx.system))
-          case "DisperserHcd" =>
+          case `disperserConnection` =>
             maybeDisperserHcd = Some(new CommandService(loc)(ctx.system))
+          case x =>
+            log.error(s"Unexpected location received: $x")
         }
       case LocationRemoved(connection) =>
         connection.name match {
