@@ -35,8 +35,8 @@ object Common extends AutoPlugin {
       // -a Show stack traces and exception class name for AssertionErrors.
       Tests.Argument(TestFrameworks.JUnit, "-v", "-a")
     ),
-    resolvers += Resolver.url("bintray-sbt-plugins", url("https://dl.bintray.com/sbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns),
-    resolvers += Resolver.bintrayRepo("twtmt", "maven"),
+//    resolvers += Resolver.url("bintray-sbt-plugins", url("https://dl.bintray.com/sbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns),
+//    resolvers += Resolver.bintrayRepo("twtmt", "maven"),
     version := "0.0.1",
 //    fork := true,
     parallelExecution in Test := false,
