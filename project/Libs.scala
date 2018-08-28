@@ -26,6 +26,7 @@ object CSW {
 object React4s {
   val `react4s`  = dep("com.github.ahnfelt" %%% "react4s"  % "0.9.15-SNAPSHOT")
   val `router4s` = dep("com.github.werk"    %%% "router4s" % "0.1.0-SNAPSHOT")
+  val `jquery-facade` = dep("org.querki" %%% "jquery-facade" % "1.2")
 }
 
 

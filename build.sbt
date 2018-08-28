@@ -29,11 +29,13 @@ lazy val `demo-web-app` = project
     npmDependencies in Compile ++= Seq(
       "react" -> "16.4.1",
       "react-dom" -> "16.4.2"
+//      "jquery" -> "2.2.4"
     ),
     scalacOptions += "-P:scalajs:sjsDefinedByDefault",
     libraryDependencies ++= Seq(
       React4s.`react4s`.value,
-      React4s.`router4s`.value,
+      React4s.`router4s`.value
+//      React4s.`jquery-facade`.value
     ),
     version in webpack := "4.8.1",
     version in startWebpackDevServer := "3.1.4",
