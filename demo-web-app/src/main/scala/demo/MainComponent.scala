@@ -1,11 +1,10 @@
 package demo
 
 import com.github.ahnfelt.react4s._
-import demo.param.formats.JsonSupport
-import demo.param.generics.{Key, KeyType, Parameter}
+import demo.param.commands.{CommandName, Setup}
+import demo.param.generics.{Key, KeyType}
+import demo.param.models.Prefix
 import tmt.WebClients
-import tmt.sequencer.models.ControlCommandWeb
-import ujson.Js
 
 object MainComponent {
   // XXX TODO: Get these values dynamically from the HCDs?
@@ -17,30 +16,17 @@ object MainComponent {
   val disperserKey: Key[String] = KeyType.StringKey.make("disperser")
 
   val assemblyName = "DemoAssembly"
+
+  // Name of command sent to this assembly to set filter and disperser values
+  val demoCmd = CommandName("demo")
+
+  // For callers: Must match config file
+  val demoPrefix = Prefix("test.demo")
+
 }
 
 case class MainComponent() extends Component[NoEmit] {
   import MainComponent._
-
-//  // XXX TODO: Provide a stripped down Parameter[T] API for Scala.js?
-//  val jsonTemplate =
-//    """{
-//      |"type":"Setup",
-//      |"runId":"b3b7f7a8-07a8-4551-af18-4c2d768c632e",
-//      |"source":"test.demo",
-//      |"commandName":"demo",
-//      |"obsId":"2023-Q22-4-33",
-//      |"paramSet":[
-//      |{"keyName":"filter",
-//      |  "keyType":"StringKey",
-//      |  "values":["None"],
-//      |  "units":"NoUnits"
-//      |},{
-//      |  "keyName":"disperser",
-//      |  "keyType":"StringKey",
-//      |  "values":["Mirror"],
-//      |  "units":"NoUnits"
-//      |}]}""".stripMargin
 
   override def render(get: Get): Element = {
 
@@ -55,25 +41,14 @@ case class MainComponent() extends Component[NoEmit] {
 
   private def itemSelected(name: String, value: String): Unit = {
     println(s"XXX Selected $name: $value")
-    val client = WebClients.assemblyCommandClient(assemblyName)
-    if (name == "Filter") {
-      val items: Set[Parameter[_]] = Set(filterKey.set(value))
-      val jsValue                  = JsonSupport.paramSetFormat.writes(items)
-      println(s"$jsValue")
 
-//
-//      val cmd = client.submit(new ControlCommandWeb(
-//        kind = "Setup",
-//        source = "test.demo",
-//        commandName = "demo",
-//        maybeObsId = None,
-//        paramSet = paramSet,
-//        runId = None
-//      ))
-    } else if (name == "Disperser") {
-      val items: Set[Parameter[_]] = Set(disperserKey.set(value))
-      val jsValue                  = JsonSupport.paramSetFormat.writes(items)
-      println(s"$jsValue")
+    val client = WebClients.assemblyCommandClient(assemblyName)
+    val setup = if (name == "Filter") {
+      Setup(demoPrefix, demoCmd, None).add(filterKey.set(value))
+    } else {
+      Setup(demoPrefix, demoCmd, None).add(disperserKey.set(value))
     }
+
+    println(s"Setup = $setup")
   }
 }

@@ -1,5 +1,6 @@
 package demo.param.formats
 
+import demo.param.commands._
 import demo.param.generics.Parameter
 import demo.param.models.{Id, ObsId, Prefix}
 import play.api.libs.json._
@@ -17,87 +18,85 @@ trait JsonSupport { self: DerivedJsonFormats with WrappedArrayProtocol ⇒
   lazy val obsIdFormat: Format[Option[ObsId]]        = implicitly[Format[Option[ObsId]]]
   lazy val prefixFormat: Format[Prefix]              = implicitly[Format[Prefix]]
 
-  // --- XXX The following are not used in Scala.js at this point ---
-
-//  lazy val commandTypeFormat: Format[CommandName]    = implicitly[Format[CommandName]]
+  lazy val commandTypeFormat: Format[CommandName] = implicitly[Format[CommandName]]
 //  lazy val eventTimeFormat: Format[EventTime]        = implicitly[Format[EventTime]]
 //  lazy val eventNameFormat: Format[EventName]        = implicitly[Format[EventName]]
 //  lazy val stateNameFormat: Format[StateName]        = implicitly[Format[StateName]]
-//
-//  // config and event type JSON tags
-//  private val setupType        = classOf[Setup].getSimpleName
-//  private val observeType      = classOf[Observe].getSimpleName
-//  private val waitType         = classOf[Wait].getSimpleName
+
+  // config and event type JSON tags
+  private val setupType   = classOf[Setup].getSimpleName
+  private val observeType = classOf[Observe].getSimpleName
+  private val waitType    = classOf[Wait].getSimpleName
 //  private val observeEventType = classOf[ObserveEvent].getSimpleName
 //  private val systemEventType  = classOf[SystemEvent].getSimpleName
 //  private val currentStateType = classOf[CurrentState].getSimpleName
 //  private val demandStateType  = classOf[DemandState].getSimpleName
 
-//  private def unexpectedJsValueError(x: JsValue) = throw new RuntimeException(s"Unexpected JsValue: $x")
+  private def unexpectedJsValueError(x: JsValue) = throw new RuntimeException(s"Unexpected JsValue: $x")
 
-//  /**
-//    * Writes a SequenceParameterSet to JSON
-//    *
-//    * @param result any instance of SequenceCommand
-//    * @tparam A the type of the command (implied)
-//    * @return a JsValue object representing the SequenceCommand
-//    */
-//  def writeSequenceCommand[A <: SequenceCommand](result: A): JsValue = {
-//    JsObject(
-//      Seq(
-//        "type"        → JsString(result.typeName),
-//        "runId"       → idFormat.writes(result.runId),
-//        "source"      → prefixFormat.writes(result.source),
-//        "commandName" → commandTypeFormat.writes(result.commandName),
-//        "obsId"       → obsIdFormat.writes(result.maybeObsId),
-//        "paramSet"    → Json.toJson(result.paramSet)
-//      )
-//    )
-//  }
+  /**
+   * Writes a SequenceParameterSet to JSON
+   *
+   * @param result any instance of SequenceCommand
+   * @tparam A the type of the command (implied)
+   * @return a JsValue object representing the SequenceCommand
+   */
+  def writeSequenceCommand[A <: SequenceCommand](result: A): JsValue = {
+    JsObject(
+      Seq(
+        "type"        → JsString(result.typeName),
+        "runId"       → idFormat.writes(result.runId),
+        "source"      → prefixFormat.writes(result.source),
+        "commandName" → commandTypeFormat.writes(result.commandName),
+        "obsId"       → obsIdFormat.writes(result.maybeObsId),
+        "paramSet"    → Json.toJson(result.paramSet)
+      )
+    )
+  }
 
-//  /**
-//    * Reads a SequenceCommand back from JSON
-//    *
-//    * @param json the parsed JSON
-//    * @tparam A the type of the command (implied)
-//    * @return an instance of the given SequenceCommand type, or an exception if the JSON is not valid for that type
-//    */
-//  def readSequenceCommand[A <: SequenceCommand](json: JsValue): A = {
-//    json match {
-//      case JsObject(fields) =>
-//        (fields("type"), fields("runId"), fields("source"), fields("commandName"), fields("obsId"), fields("paramSet")) match {
-//          case (JsString(typeName), runId, source, commandName, obsId, paramSet) =>
-//            typeName match {
-//              case `setupType` =>
-//                Setup(runId.as[Id],
-//                  source.as[Prefix],
-//                  commandName.as[CommandName],
-//                  obsId.as[Option[ObsId]],
-//                  paramSet.as[Set[Parameter[_]]]).asInstanceOf[A]
-//              case `observeType` =>
-//                Observe(runId.as[Id],
-//                  source.as[Prefix],
-//                  commandName.as[CommandName],
-//                  obsId.as[Option[ObsId]],
-//                  paramSet.as[Set[Parameter[_]]]).asInstanceOf[A]
-//              case `waitType` =>
-//                Wait(runId.as[Id],
-//                  source.as[Prefix],
-//                  commandName.as[CommandName],
-//                  obsId.as[Option[ObsId]],
-//                  paramSet.as[Set[Parameter[_]]]).asInstanceOf[A]
-//              case _ => unexpectedJsValueError(json)
-//            }
-//          case _ => unexpectedJsValueError(json)
-//        }
-//      case _ => unexpectedJsValueError(json)
-//    }
-//  }
-//
-//  implicit val sequenceCommandFormat: Format[SequenceCommand] = new Format[SequenceCommand] {
-//    override def writes(o: SequenceCommand): JsValue             = writeSequenceCommand(o)
-//    override def reads(json: JsValue): JsResult[SequenceCommand] = readSequenceCommand(json)
-//  }
+  /**
+   * Reads a SequenceCommand back from JSON
+   *
+   * @param json the parsed JSON
+   * @tparam A the type of the command (implied)
+   * @return an instance of the given SequenceCommand type, or an exception if the JSON is not valid for that type
+   */
+  def readSequenceCommand[A <: SequenceCommand](json: JsValue): A = {
+    json match {
+      case JsObject(fields) =>
+        (fields("type"), fields("runId"), fields("source"), fields("commandName"), fields("obsId"), fields("paramSet")) match {
+          case (JsString(typeName), runId, source, commandName, obsId, paramSet) =>
+            typeName match {
+              case `setupType` =>
+                Setup(runId.as[Id],
+                      source.as[Prefix],
+                      commandName.as[CommandName],
+                      obsId.as[Option[ObsId]],
+                      paramSet.as[Set[Parameter[_]]]).asInstanceOf[A]
+              case `observeType` =>
+                Observe(runId.as[Id],
+                        source.as[Prefix],
+                        commandName.as[CommandName],
+                        obsId.as[Option[ObsId]],
+                        paramSet.as[Set[Parameter[_]]]).asInstanceOf[A]
+              case `waitType` =>
+                Wait(runId.as[Id],
+                     source.as[Prefix],
+                     commandName.as[CommandName],
+                     obsId.as[Option[ObsId]],
+                     paramSet.as[Set[Parameter[_]]]).asInstanceOf[A]
+              case _ => unexpectedJsValueError(json)
+            }
+          case _ => unexpectedJsValueError(json)
+        }
+      case _ => unexpectedJsValueError(json)
+    }
+  }
+
+  implicit val sequenceCommandFormat: Format[SequenceCommand] = new Format[SequenceCommand] {
+    override def writes(o: SequenceCommand): JsValue             = writeSequenceCommand(o)
+    override def reads(json: JsValue): JsResult[SequenceCommand] = readSequenceCommand(json)
+  }
 
 //  /**
 //    * Writes a state variable to JSON
