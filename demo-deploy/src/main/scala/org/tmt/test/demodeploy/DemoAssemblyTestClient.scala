@@ -18,6 +18,7 @@ import csw.messages.events._
 import csw.messages.location.ComponentType.Assembly
 import csw.messages.location.Connection.AkkaConnection
 import csw.messages.location._
+import csw.messages.params.formats.JsonSupport
 import csw.messages.params.models.ObsId
 import csw.services.command.scaladsl.CommandService
 import csw.services.event.EventServiceFactory
@@ -124,6 +125,9 @@ object DemoAssemblyTestClient extends App {
   private def interact(ctx: ActorContext[TrackingEvent], assembly: CommandService): Unit = {
     val n      = math.min(filters.size, dispersers.size)
     val setups = (0 until n).toList.map(i => makeSetup(filters(i), dispersers(i)))
+
+    println(JsonSupport.writeSequenceCommand(setups.head)) // XXX just to see the format of the JSON
+
     submitAll(setups, assembly).onComplete {
       case Success(responses) => println(s"Test Passed: Responses = $responses")
       case Failure(ex)        => println(s"Test Failed: $ex")

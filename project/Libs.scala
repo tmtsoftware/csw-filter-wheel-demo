@@ -29,4 +29,15 @@ object React4s {
   val `jquery-facade` = dep("org.querki" %%% "jquery-facade" % "1.2")
 }
 
+object Utils {
+  val `play-json`  = dep("com.typesafe.play" %%% "play-json" % "2.6.10") //Apache 2.0
+  val `enumeratum` = dep("com.beachape" %%% "enumeratum" % "1.5.13")
+  val `enumeratum-play-json` = dep("com.beachape" %%% "enumeratum-play-json" % "1.5.14")
+}
+
+object ESWjs {
+  val Version = "0.1.0-SNAPSHOT"
+  val `sequencer-web-api`  = dep("org.tmt" %%% "sequencer-web-api" % Version)
+}
+
 

@@ -2,11 +2,11 @@ import sbt.Keys.version
 import sbt.{AutoPlugin, Plugins, Setting}
 
 /**
-* ==================== IMPORTANT - DO NOT CHANGE =================
-* This is required to display correct version for the apps.
-* Basically this overrides version of ContainerCmd/HostConfig which is coming from csw-framework` with version of csw-filter-wheel-demo
-*
-*/
+ * ==================== IMPORTANT - DO NOT CHANGE =================
+ * This is required to display correct version for the apps.
+ * Basically this overrides version of ContainerCmd/HostConfig which is coming from csw-framework with version of csw-filter-wheel-demo
+ *
+ */
 object CswBuildInfo extends AutoPlugin {
   import sbtbuildinfo.BuildInfoPlugin
   import BuildInfoPlugin.autoImport._
