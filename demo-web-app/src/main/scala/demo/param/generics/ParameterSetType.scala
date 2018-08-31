@@ -1,10 +1,6 @@
 package demo.param.generics
 
-import java.util
-
 import scala.annotation.varargs
-import scala.collection.JavaConverters.setAsJavaSetConverter
-import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 /**
  * The base trait for various parameter set types (commands or events)
@@ -23,11 +19,6 @@ abstract class ParameterSetType[T <: ParameterSetType[T]] { self: T =>
    * Holds the parameters for this parameter set
    */
   def paramSet: Set[Parameter[_]]
-
-  /**
-   * A Java helper to get parameters for this parameter set
-   */
-  def jParamSet: util.Set[Parameter[_]] = paramSet.asJava
 
   /**
    * The number of parameters in this parameter set

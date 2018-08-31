@@ -11,8 +11,9 @@ import csw.messages.commands.matchers.DemandMatcherAll
 import csw.messages.commands.{CommandName, CommandResponse, ControlCommand, Setup}
 import csw.messages.framework.ComponentInfo
 import csw.messages.location.{AkkaLocation, LocationRemoved, LocationUpdated, TrackingEvent}
+import csw.messages.params.generics.Key
 import csw.messages.params.models.Prefix
-import csw.messages.params.states.DemandState
+import csw.messages.params.states.{DemandState, StateName}
 import csw.services.alarm.api.scaladsl.AlarmService
 import csw.services.command.CommandResponseManager
 import csw.services.command.scaladsl.CommandService
@@ -118,29 +119,68 @@ class DemoAssemblyHandlers(
     }
   }
 
-  override def validateCommand(controlCommand: ControlCommand): CommandResponse = {
+  private def validateCommand(controlCommand: ControlCommand,
+                              name: String,
+                              maybeHcd: Option[CommandService],
+                              key: Key[String],
+                              choices: List[String]): Option[CommandResponse] = {
     controlCommand match {
       case s @ Setup(_, _, `demoCmd`, _, _) =>
-        if (maybeFilterHcd.isEmpty)
-          CommandResponse.Invalid(controlCommand.runId, UnresolvedLocationsIssue("Missing filter HCD"))
-        else if (maybeDisperserHcd.isEmpty)
-          CommandResponse.Invalid(controlCommand.runId, UnresolvedLocationsIssue("Missing disperser HCD"))
-        else if (!s.exists(filterKey)) {
-          CommandResponse.Invalid(controlCommand.runId, MissingKeyIssue(s"Missing ${filterKey.keyName} key"))
-        } else if (!s.exists(disperserKey)) {
-          CommandResponse.Invalid(controlCommand.runId, MissingKeyIssue(s"Missing ${disperserKey.keyName} key"))
-        } else {
-          val filter    = s.get(filterKey).get.head
-          val disperser = s.get(disperserKey).get.head
-          if (!filters.contains(filter))
-            CommandResponse.Invalid(controlCommand.runId, OtherIssue(s"Unknown filter: $filter"))
-          else if (!dispersers.contains(disperser))
-            CommandResponse.Invalid(controlCommand.runId, OtherIssue(s"Unknown disperser: $disperser"))
-          else CommandResponse.Accepted(controlCommand.runId)
+        s.get(key).map { param =>
+          val value = param.head
+          if (maybeHcd.isEmpty) {
+            CommandResponse.Invalid(controlCommand.runId, UnresolvedLocationsIssue(s"Missing $name HCD"))
+          } else {
+            if (!choices.contains(value))
+              CommandResponse.Invalid(controlCommand.runId, OtherIssue(s"Unknown $name: $value"))
+            else CommandResponse.Accepted(controlCommand.runId)
+          }
         }
 
       case x =>
-        CommandResponse.Invalid(controlCommand.runId, UnsupportedCommandIssue(s"Unsupported command: $x"))
+        Some(CommandResponse.Invalid(controlCommand.runId, UnsupportedCommandIssue(s"Unsupported command: $x")))
+    }
+  }
+
+  override def validateCommand(controlCommand: ControlCommand): CommandResponse = {
+    val responses = List(
+      validateCommand(controlCommand, "filter", maybeFilterHcd, filterKey, filters),
+      validateCommand(controlCommand, "disperser", maybeDisperserHcd, disperserKey, dispersers)
+    ).flatten
+    if (responses.isEmpty)
+      CommandResponse.Invalid(controlCommand.runId, MissingKeyIssue(s"Missing required filter or disperser key"))
+    else {
+      val invalidResponses = responses.filter(!_.isInstanceOf[CommandResponse.Accepted])
+      if (invalidResponses.nonEmpty)
+        invalidResponses.head
+      else CommandResponse.Accepted(controlCommand.runId)
+    }
+  }
+
+  private def onSubmit(controlCommand: Setup,
+                       prefix: Prefix,
+                       currentStateName: StateName,
+                       commandName: CommandName,
+                       name: String,
+                       maybeHcd: Option[CommandService],
+                       key: Key[String]): Unit = {
+
+    maybeHcd.foreach { hcd =>
+      controlCommand.get(key).foreach { param =>
+        val target = param.head
+        val setup  = Setup(componentInfo.prefix, commandName, controlCommand.maybeObsId).add(key.set(target))
+        commandResponseManager.addSubCommand(controlCommand.runId, setup.runId)
+        val demandMatcher = DemandMatcherAll(DemandState(prefix, currentStateName).add(key.set(target)), timeout)
+        val response      = hcd.onewayAndMatch(setup, demandMatcher)
+        response.onComplete {
+          case Success(commandResponse) =>
+            log.info(s"Set $name reponded with $commandResponse")
+            commandResponseManager.updateSubCommand(setup.runId, commandResponse)
+          case Failure(ex) =>
+            log.error(s"Set $name error", ex = ex)
+            commandResponseManager.updateSubCommand(setup.runId, Error(setup.runId, ex.toString))
+        }
+      }
     }
   }
 
@@ -149,43 +189,13 @@ class DemoAssemblyHandlers(
 
     controlCommand match {
       case s @ Setup(_, _, `demoCmd`, _, _) =>
-        maybeFilterHcd.foreach { filterHcd =>
-          val target = s.get(filterKey).get.head
-          val setup  = Setup(componentInfo.prefix, filterCmd, controlCommand.maybeObsId).add(filterKey.set(target))
-          commandResponseManager.addSubCommand(s.runId, setup.runId)
-          val demandMatcher = DemandMatcherAll(DemandState(filterPrefix, filterStateName).add(filterKey.set(target)), timeout)
-          val response      = filterHcd.onewayAndMatch(setup, demandMatcher)
-          response.onComplete {
-            case Success(commandResponse) =>
-              log.info(s"Set filter reponded with $commandResponse")
-              commandResponseManager.updateSubCommand(setup.runId, commandResponse)
-            case Failure(ex) =>
-              log.error(s"Set filter error", ex = ex)
-              commandResponseManager.updateSubCommand(setup.runId, Error(setup.runId, ex.toString))
-          }
-        }
-        maybeDisperserHcd.foreach { disperserHcd =>
-          val target = s.get(disperserKey).get.head
-          val setup  = Setup(componentInfo.prefix, disperserCmd, controlCommand.maybeObsId).add(disperserKey.set(target))
-          commandResponseManager.addSubCommand(s.runId, setup.runId)
-          val demandMatcher =
-            DemandMatcherAll(DemandState(disperserPrefix, disperserStateName).add(disperserKey.set(target)), timeout)
-          val response = disperserHcd.onewayAndMatch(setup, demandMatcher)
-          response.onComplete {
-            case Success(commandResponse) =>
-              log.info(s"Set disperser reponded with $commandResponse")
-              commandResponseManager.updateSubCommand(setup.runId, commandResponse)
-            case Failure(ex) =>
-              log.error(s"Set disperser error", ex = ex)
-              commandResponseManager.updateSubCommand(setup.runId, Error(setup.runId, ex.toString))
-          }
-        }
+        onSubmit(s, filterPrefix, filterStateName, filterCmd, "filter", maybeFilterHcd, filterKey)
+        onSubmit(s, disperserPrefix, disperserStateName, disperserCmd, "disperser", maybeDisperserHcd, disperserKey)
 
       case x =>
         // Should not happen
         log.error(s"Unsupported command received: $x")
     }
-
   }
 
   override def onOneway(controlCommand: ControlCommand): Unit = {

@@ -1,11 +1,8 @@
 package demo.param.models
 
-import java.util
-
 import play.api.libs.json.{Json, OFormat}
 
 import scala.annotation.varargs
-import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.language.implicitConversions
 
 /**
@@ -53,12 +50,6 @@ case class Choices(values: Set[Choice]) {
    * A comma separated string representation of all choices this instance holds
    */
   override def toString: String = values.mkString("(", ",", ")")
-
-  /**
-   * A Java helper to get all choices this instance holds
-   * @return
-   */
-  def jValues(): util.List[Choice] = values.toList.asJava
 }
 
 /**

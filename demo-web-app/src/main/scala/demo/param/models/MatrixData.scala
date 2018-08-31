@@ -1,10 +1,7 @@
 package demo.param.models
 
-import java.util
-
 import play.api.libs.json.{Format, Json}
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -27,11 +24,6 @@ case class MatrixData[T](data: mutable.WrappedArray[mutable.WrappedArray[T]])(im
    * An Array of values this parameter holds
    */
   def values: Array[Array[T]] = data.array.map(_.array)
-
-  /**
-   * A Java helper that returns an Array of values this parameter holds
-   */
-  def jValues: util.List[util.List[T]] = data.map(_.asJava).asJava
 
   /**
    * A comma separated string representation of all values this MatrixData holds

@@ -2,9 +2,13 @@ package demo
 
 import com.github.ahnfelt.react4s._
 import demo.param.commands.{CommandName, Setup}
+import demo.param.formats.JsonSupport
 import demo.param.generics.{Key, KeyType}
-import demo.param.models.Prefix
+import demo.param.models.{ObsId, Prefix}
 import tmt.WebClients
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
 
 object MainComponent {
   // XXX TODO: Get these values dynamically from the HCDs?
@@ -23,6 +27,11 @@ object MainComponent {
   // For callers: Must match config file
   val demoPrefix = Prefix("test.demo")
 
+  private val obsId = ObsId("2023-Q22-4-33")
+  //  // Gateway info
+//  val gatewayHost = "127.0.0.1"
+//  val gatewayPort = 9090
+//  val gatewayUrl = s"http://$gatewayHost:$gatewayPort/assembly/$assemblyName/Submit"
 }
 
 case class MainComponent() extends Component[NoEmit] {
@@ -42,13 +51,21 @@ case class MainComponent() extends Component[NoEmit] {
   private def itemSelected(name: String, value: String): Unit = {
     println(s"XXX Selected $name: $value")
 
-    val client = WebClients.assemblyCommandClient(assemblyName)
+    val assemblyClient = WebClients.assemblyCommandClient(assemblyName)
     val setup = if (name == "Filter") {
-      Setup(demoPrefix, demoCmd, None).add(filterKey.set(value))
+      Setup(demoPrefix, demoCmd, Some(obsId)).add(filterKey.set(value))
     } else {
-      Setup(demoPrefix, demoCmd, None).add(disperserKey.set(value))
+      Setup(demoPrefix, demoCmd, Some(obsId)).add(disperserKey.set(value))
     }
 
-    println(s"Setup = $setup")
+    println(s"\nSetup = $setup")
+    val json = JsonSupport.writeSequenceCommand(setup)
+    println(s"\njson = $json")
+
+    assemblyClient.submit(json.toString()).onComplete {
+      case Success(response) => println(s"\nResponse $response")
+      case Failure(ex)       => println(s"\nResponse $ex")
+    }
+
   }
 }

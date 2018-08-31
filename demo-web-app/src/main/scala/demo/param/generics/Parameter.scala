@@ -1,11 +1,8 @@
 package demo.param.generics
 
-import java.util
-
 import demo.param.models.Units
 import play.api.libs.json._
 
-import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
@@ -77,11 +74,6 @@ case class Parameter[S: Format: ClassTag] private[param] (
    * An Array of values this parameter holds
    */
   def values: Array[S] = items.array
-
-  /**
-   * A Java helper that returns a List of values this parameter holds
-   */
-  def jValues: util.List[S] = items.asJava
 
   /**
    * The number of values in this parameter (values.size)

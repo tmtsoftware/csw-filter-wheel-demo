@@ -1,10 +1,7 @@
 package demo.param.models
 
-import java.util
-
 import play.api.libs.json.{Format, Json}
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -20,11 +17,6 @@ case class ArrayData[T](data: mutable.WrappedArray[T]) {
    * An Array of values this parameter holds
    */
   def values: Array[T] = data.array
-
-  /**
-   * A Java helper that returns an Array of values this parameter holds
-   */
-  def jValues: util.List[T] = data.asJava
 
   /**
    * A comma separated string representation of all values this ArrayData holds
