@@ -62,6 +62,7 @@ case class MainComponent() extends Component[NoEmit] {
     val json = JsonSupport.writeSequenceCommand(setup)
     println(s"\njson = $json")
 
+    // XXX TODO FIXME: Not working yet, since submit is looking for the JSON for a ControlCommandWeb instance...
     assemblyClient.submit(json.toString()).onComplete {
       case Success(response) => println(s"\nResponse $response")
       case Failure(ex)       => println(s"\nResponse $ex")
