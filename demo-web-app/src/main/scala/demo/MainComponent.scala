@@ -1,10 +1,9 @@
 package demo
 
 import com.github.ahnfelt.react4s._
-import demo.param.commands.{CommandName, Setup}
-import demo.param.formats.JsonSupport
-import demo.param.generics.{Key, KeyType}
-import demo.param.models.{ObsId, Prefix}
+import csw.messages.commands.{CommandName, ControlCommand, Setup}
+import csw.messages.params.generics.{Key, KeyType}
+import csw.messages.params.models.{ObsId, Prefix}
 import tmt.WebClients
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -58,14 +57,11 @@ case class MainComponent() extends Component[NoEmit] {
       Setup(demoPrefix, demoCmd, Some(obsId)).add(disperserKey.set(value))
     }
 
-    println(s"\nSetup = $setup")
-    val json = JsonSupport.writeSequenceCommand(setup)
-    println(s"\njson = $json")
-
-    // XXX TODO FIXME: Not working yet, since submit is looking for the JSON for a ControlCommandWeb instance...
-    assemblyClient.submit(json.toString()).onComplete {
+    assemblyClient.submit(setup).onComplete {
       case Success(response) => println(s"\nResponse $response")
-      case Failure(ex)       => println(s"\nResponse $ex")
+      case Failure(ex) =>
+        ex.printStackTrace()
+        println(s"\nResponse $ex")
     }
 
   }

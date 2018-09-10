@@ -2,24 +2,18 @@ package org.tmt.test.demoassembly
 
 import akka.actor.typed.scaladsl.ActorContext
 import akka.util.Timeout
-import csw.framework.CurrentStatePublisher
+import csw.framework.models.CswServices
 import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
 import csw.messages.TopLevelActorMessage
 import csw.messages.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnresolvedLocationsIssue, UnsupportedCommandIssue}
 import csw.messages.commands.CommandResponse.Error
 import csw.messages.commands.matchers.DemandMatcherAll
 import csw.messages.commands.{CommandName, CommandResponse, ControlCommand, Setup}
-import csw.messages.framework.ComponentInfo
 import csw.messages.location.{AkkaLocation, LocationRemoved, LocationUpdated, TrackingEvent}
 import csw.messages.params.generics.Key
 import csw.messages.params.models.Prefix
 import csw.messages.params.states.{DemandState, StateName}
-import csw.services.alarm.api.scaladsl.AlarmService
-import csw.services.command.CommandResponseManager
 import csw.services.command.scaladsl.CommandService
-import csw.services.event.api.scaladsl.EventService
-import csw.services.location.scaladsl.LocationService
-import csw.services.logging.scaladsl.LoggerFactory
 import org.tmt.test.demohcd.FilterHcd._
 import org.tmt.test.demohcd.DisperserHcd._
 
@@ -32,22 +26,9 @@ class DemoAssemblyBehaviorFactory extends ComponentBehaviorFactory {
 
   override def handlers(
       ctx: ActorContext[TopLevelActorMessage],
-      componentInfo: ComponentInfo,
-      commandResponseManager: CommandResponseManager,
-      currentStatePublisher: CurrentStatePublisher,
-      locationService: LocationService,
-      eventService: EventService,
-      alarmService: AlarmService,
-      loggerFactory: LoggerFactory
+      cswServices: CswServices
   ): ComponentHandlers =
-    new DemoAssemblyHandlers(ctx,
-                             componentInfo,
-                             commandResponseManager,
-                             currentStatePublisher,
-                             locationService,
-                             eventService,
-                             alarmService,
-                             loggerFactory)
+    new DemoAssemblyHandlers(ctx, cswServices)
 
 }
 
@@ -69,22 +50,10 @@ object DemoAssembly {
  */
 class DemoAssemblyHandlers(
     ctx: ActorContext[TopLevelActorMessage],
-    componentInfo: ComponentInfo,
-    commandResponseManager: CommandResponseManager,
-    currentStatePublisher: CurrentStatePublisher,
-    locationService: LocationService,
-    eventService: EventService,
-    alarmService: AlarmService,
-    loggerFactory: LoggerFactory
-) extends ComponentHandlers(ctx,
-                              componentInfo,
-                              commandResponseManager,
-                              currentStatePublisher,
-                              locationService,
-                              eventService,
-                              alarmService,
-                              loggerFactory) {
+    cswServices: CswServices
+) extends ComponentHandlers(ctx, cswServices) {
   import DemoAssembly._
+  import cswServices._
 
   implicit val ec: ExecutionContextExecutor             = ctx.executionContext
   implicit val timeout: Timeout                         = 3.seconds

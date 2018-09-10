@@ -10,40 +10,21 @@ import scala.async.Async.async
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
 import akka.actor.typed.scaladsl.ActorContext
-import csw.framework.CurrentStatePublisher
+import csw.framework.models.CswServices
 import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
 import csw.messages.TopLevelActorMessage
 import csw.messages.events.{EventKey, EventName}
-import csw.messages.framework.ComponentInfo
 import csw.messages.location.Connection.AkkaConnection
 import csw.messages.params.models.Prefix
 import csw.messages.params.states.StateName
-import csw.services.alarm.api.scaladsl.AlarmService
-import csw.services.command.CommandResponseManager
-import csw.services.event.api.scaladsl.EventService
-import csw.services.location.scaladsl.LocationService
-import csw.services.logging.scaladsl.LoggerFactory
 
 class FilterHcdBehaviorFactory extends ComponentBehaviorFactory {
 
   override def handlers(
       ctx: ActorContext[TopLevelActorMessage],
-      componentInfo: ComponentInfo,
-      commandResponseManager: CommandResponseManager,
-      currentStatePublisher: CurrentStatePublisher,
-      locationService: LocationService,
-      eventService: EventService,
-      alarmService: AlarmService,
-      loggerFactory: LoggerFactory
+      cswServices: CswServices
   ): ComponentHandlers =
-    new FilterHcdHandlers(ctx,
-                          componentInfo,
-                          commandResponseManager,
-                          currentStatePublisher,
-                          locationService,
-                          eventService,
-                          alarmService,
-                          loggerFactory)
+    new FilterHcdHandlers(ctx, cswServices)
 
 }
 
@@ -77,22 +58,10 @@ object FilterHcd {
  */
 class FilterHcdHandlers(
     ctx: ActorContext[TopLevelActorMessage],
-    componentInfo: ComponentInfo,
-    commandResponseManager: CommandResponseManager,
-    currentStatePublisher: CurrentStatePublisher,
-    locationService: LocationService,
-    eventService: EventService,
-    alarmService: AlarmService,
-    loggerFactory: LoggerFactory
-) extends ComponentHandlers(ctx,
-                              componentInfo,
-                              commandResponseManager,
-                              currentStatePublisher,
-                              locationService,
-                              eventService,
-                              alarmService,
-                              loggerFactory) {
+    cswServices: CswServices
+) extends ComponentHandlers(ctx, cswServices) {
   import FilterHcd._
+  import cswServices._
 
   implicit val ec: ExecutionContextExecutor = ctx.executionContext
   private val log                           = loggerFactory.getLogger
