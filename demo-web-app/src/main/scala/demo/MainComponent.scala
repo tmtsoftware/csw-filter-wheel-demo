@@ -72,10 +72,9 @@ case class MainComponent() extends Component[NoEmit] {
   }
 
   private def subscribeToEvents(): Unit = {
-    val client = new EventSource(s"events/subscribe/subsystem/TEST")
+    val client = new EventSource("http://localhost:9090/events/subscribe/subsystem/test")
     client.onmessage = { x =>
-      println(s"Received event $x:")
-//      println(s"Received event: ${x.data}")
+      println(s"Received event: ${x.data}")
     }
   }
 }
