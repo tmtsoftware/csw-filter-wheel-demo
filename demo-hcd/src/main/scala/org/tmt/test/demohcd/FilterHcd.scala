@@ -3,7 +3,6 @@ package org.tmt.test.demohcd
 import csw.messages.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnsupportedCommandIssue}
 import csw.messages.commands.CommandResponse.Error
 import csw.messages.commands.{CommandName, CommandResponse, ControlCommand, Setup}
-import csw.messages.location.{ComponentId, ComponentType, TrackingEvent}
 import csw.messages.params.generics.{Key, KeyType}
 
 import scala.async.Async.async
@@ -14,9 +13,10 @@ import csw.framework.models.CswServices
 import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
 import csw.messages.TopLevelActorMessage
 import csw.messages.events.{EventKey, EventName}
-import csw.messages.location.Connection.AkkaConnection
 import csw.messages.params.models.Prefix
 import csw.messages.params.states.StateName
+import csw.services.location.api.models.{ComponentId, ComponentType, TrackingEvent}
+import csw.services.location.api.models.Connection.AkkaConnection
 
 class FilterHcdBehaviorFactory extends ComponentBehaviorFactory {
 
@@ -37,7 +37,7 @@ object FilterHcd {
   val filterCmd = CommandName("setFilter")
 
   // For callers: Must match config file
-  val filterPrefix = Prefix("test.filterhcd")
+  val filterPrefix = Prefix("TEST.FilterHcd")
 
   val filterConnection = AkkaConnection(ComponentId("FilterHcd", ComponentType.HCD))
 

@@ -2,7 +2,6 @@ package org.tmt.test.demohcd
 
 import csw.messages.commands.CommandResponse.Error
 import csw.messages.commands.{CommandName, CommandResponse, ControlCommand, Setup}
-import csw.messages.location.{ComponentId, ComponentType, TrackingEvent}
 import csw.messages.params.generics.{Key, KeyType}
 
 import scala.concurrent.duration._
@@ -14,9 +13,10 @@ import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
 import csw.messages.TopLevelActorMessage
 import csw.messages.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnsupportedCommandIssue}
 import csw.messages.events.{EventKey, EventName}
-import csw.messages.location.Connection.AkkaConnection
 import csw.messages.params.models.Prefix
 import csw.messages.params.states.StateName
+import csw.services.location.api.models.{ComponentId, ComponentType, TrackingEvent}
+import csw.services.location.api.models.Connection.AkkaConnection
 
 class DisperserHcdBehaviorFactory extends ComponentBehaviorFactory {
 
@@ -37,7 +37,7 @@ object DisperserHcd {
   val disperserCmd = CommandName("setDisperser")
 
   // For callers: Must match config file
-  val disperserPrefix = Prefix("test.disperserhcd")
+  val disperserPrefix = Prefix("TEST.DisperserHcd")
 
   val disperserConnection = AkkaConnection(ComponentId("DisperserHcd", ComponentType.HCD))
 

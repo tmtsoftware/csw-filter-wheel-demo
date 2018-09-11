@@ -15,14 +15,14 @@ import akka.util.Timeout
 import csw.messages.commands.CommandResultType.Negative
 import csw.messages.commands.{CommandResponse, Setup}
 import csw.messages.events._
-import csw.messages.location.ComponentType.Assembly
-import csw.messages.location.Connection.AkkaConnection
-import csw.messages.location._
 import csw.messages.params.formats.JsonSupport
 import csw.messages.params.models.ObsId
 import csw.services.command.scaladsl.CommandService
 import csw.services.event.EventServiceFactory
 import csw.services.event.api.scaladsl.EventService
+import csw.services.location.api.models.ComponentType.Assembly
+import csw.services.location.api.models.Connection.AkkaConnection
+import csw.services.location.api.models._
 import csw.services.location.commons.ClusterAwareSettings
 
 import scala.concurrent.Future
@@ -44,7 +44,7 @@ object DemoAssemblyTestClient extends App {
   private val host            = InetAddress.getLocalHost.getHostName
   LoggingSystemFactory.start("TestServiceClientApp", "0.1", host, system)
   implicit val mat: ActorMaterializer = ActorMaterializer()
-  implicit val timeout: Timeout       = Timeout(3.seconds)
+  implicit val timeout: Timeout       = Timeout(15.seconds)
   private val log                     = GenericLoggerFactory.getLogger
   log.info("Starting DemoAssemblyTestClient")
   private val obsId = ObsId("2023-Q22-4-33")

@@ -9,11 +9,11 @@ import csw.messages.commands.CommandIssue.{MissingKeyIssue, OtherIssue, Unresolv
 import csw.messages.commands.CommandResponse.Error
 import csw.messages.commands.matchers.DemandMatcherAll
 import csw.messages.commands.{CommandName, CommandResponse, ControlCommand, Setup}
-import csw.messages.location.{AkkaLocation, LocationRemoved, LocationUpdated, TrackingEvent}
 import csw.messages.params.generics.Key
 import csw.messages.params.models.Prefix
 import csw.messages.params.states.{DemandState, StateName}
 import csw.services.command.scaladsl.CommandService
+import csw.services.location.api.models.{AkkaLocation, LocationRemoved, LocationUpdated, TrackingEvent}
 import org.tmt.test.demohcd.FilterHcd._
 import org.tmt.test.demohcd.DisperserHcd._
 
@@ -37,7 +37,7 @@ object DemoAssembly {
   val demoCmd = CommandName("demo")
 
   // For callers: Must match config file
-  val demoPrefix = Prefix("test.demo")
+  val demoPrefix = Prefix("TEST.DemoAssembly")
 }
 
 /**
@@ -56,7 +56,7 @@ class DemoAssemblyHandlers(
   import cswServices._
 
   implicit val ec: ExecutionContextExecutor             = ctx.executionContext
-  implicit val timeout: Timeout                         = 3.seconds
+  implicit val timeout: Timeout                         = 15.seconds
   private val log                                       = loggerFactory.getLogger
   private var maybeFilterHcd: Option[CommandService]    = None
   private var maybeDisperserHcd: Option[CommandService] = None
@@ -79,11 +79,13 @@ class DemoAssemblyHandlers(
             log.error(s"Unexpected location received: $x")
         }
       case LocationRemoved(connection) =>
-        connection.name match {
+        connection.componentId.name match {
           case "FilterHcd" =>
             maybeFilterHcd = None
           case "DisperserHcd" =>
             maybeDisperserHcd = None
+          case x =>
+            log.error(s"Unexpected location removed: $x")
         }
     }
   }
