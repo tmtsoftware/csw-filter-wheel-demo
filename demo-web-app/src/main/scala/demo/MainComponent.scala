@@ -1,9 +1,10 @@
 package demo
 
 import com.github.ahnfelt.react4s._
-import csw.messages.commands.{CommandName, ControlCommand, Setup}
+import csw.messages.commands.{CommandName, Setup}
 import csw.messages.params.generics.{Key, KeyType}
 import csw.messages.params.models.{ObsId, Prefix}
+import org.scalajs.dom.EventSource
 import tmt.WebClients
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,14 +28,15 @@ object MainComponent {
   val demoPrefix = Prefix("test.demo")
 
   private val obsId = ObsId("2023-Q22-4-33")
-  //  // Gateway info
-//  val gatewayHost = "127.0.0.1"
-//  val gatewayPort = 9090
-//  val gatewayUrl = s"http://$gatewayHost:$gatewayPort/assembly/$assemblyName/Submit"
 }
 
 case class MainComponent() extends Component[NoEmit] {
   import MainComponent._
+
+//  // XXX temp: Timer handle, used until event service API for Scala.js is ready
+//  var interval: js.UndefOr[js.timers.SetIntervalHandle] = js.undefined
+
+  subscribeToEvents()
 
   override def render(get: Get): Element = {
 
@@ -43,7 +45,7 @@ case class MainComponent() extends Component[NoEmit] {
       E.div(A.className("row teal lighten-2"), E.div(A.className("col s12"), Text("CSW Filter Wheel Demo"))),
       E.div(A.className("row"), E.div(Component(FormComboBox, "Filter", filters).withHandler(s => itemSelected("Filter", s)))),
       E.div(A.className("row"),
-            E.div(Component(FormComboBox, "Disperser", dispersers).withHandler(s => itemSelected("Disperser", s)))),
+            E.div(Component(FormComboBox, "Disperser", dispersers).withHandler(s => itemSelected("Disperser", s))))
     )
   }
 
@@ -57,6 +59,9 @@ case class MainComponent() extends Component[NoEmit] {
       Setup(demoPrefix, demoCmd, Some(obsId)).add(disperserKey.set(value))
     }
 
+//    // XXX temp timer
+//    interval = js.timers.setInterval(1000)(tick.runNow())
+
     assemblyClient.submit(setup).onComplete {
       case Success(response) => println(s"\nResponse $response")
       case Failure(ex) =>
@@ -64,5 +69,12 @@ case class MainComponent() extends Component[NoEmit] {
         println(s"\nResponse $ex")
     }
 
+  }
+
+  private def subscribeToEvents(): Unit = {
+    val client = new EventSource(s"events/subscribe/subsystem/TEST")
+    client.onmessage = { x =>
+      println(s"Received event: ${x.data}")
+    }
   }
 }
