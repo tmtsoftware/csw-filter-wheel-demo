@@ -37,7 +37,7 @@ object DisperserHcd {
   val disperserCmd = CommandName("setDisperser")
 
   // For callers: Must match config file
-  val disperserPrefix = Prefix("TEST.DisperserHcd")
+  val disperserPrefix = Prefix("test.DisperserHcd")
 
   val disperserConnection = AkkaConnection(ComponentId("DisperserHcd", ComponentType.HCD))
 

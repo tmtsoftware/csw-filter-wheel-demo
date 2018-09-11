@@ -37,7 +37,7 @@ object FilterHcd {
   val filterCmd = CommandName("setFilter")
 
   // For callers: Must match config file
-  val filterPrefix = Prefix("TEST.FilterHcd")
+  val filterPrefix = Prefix("test.FilterHcd")
 
   val filterConnection = AkkaConnection(ComponentId("FilterHcd", ComponentType.HCD))
 

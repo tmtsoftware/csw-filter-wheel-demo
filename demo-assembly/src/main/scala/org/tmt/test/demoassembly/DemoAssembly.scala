@@ -37,7 +37,7 @@ object DemoAssembly {
   val demoCmd = CommandName("demo")
 
   // For callers: Must match config file
-  val demoPrefix = Prefix("TEST.DemoAssembly")
+  val demoPrefix = Prefix("test.DemoAssembly")
 }
 
 /**
