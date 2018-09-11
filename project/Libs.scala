@@ -17,7 +17,7 @@ object CSW {
 //  private val Org     = "org.tmt"
 
   private val Org     = "com.github.tmtsoftware.csw-prod"
-  private val Version = "6845e21"
+  private val Version = "8d4a4a5" // Must match version used by esw-prototype!
 
 
   val `csw-location`      = Org %% "csw-location" % Version
