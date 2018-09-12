@@ -38,16 +38,27 @@ object MainComponent {
 case class MainComponent() extends Component[NoEmit] with AssemblyJsonSupport {
   import MainComponent._
 
+  private val currentFilter    = State(filters.head)
+  private val currentDisperser = State(dispersers.head)
+
+  private val title = E.div(A.className("row teal lighten-2"), E.div(A.className("col s8"), Text("CSW Filter Wheel Demo")))
+
   subscribeToEvents()
 
   override def render(get: Get): Element = {
+    val filterComponent =
+      Component(FormComboBox, "Filter", filters, get(currentFilter))
+        .withHandler(s => itemSelected("Filter", s))
+
+    val disperserComponent =
+      Component(FormComboBox, "Disperser", dispersers, get(currentDisperser))
+        .withHandler(s => itemSelected("Disperser", s))
 
     E.div(
       A.className("container"),
-      E.div(A.className("row teal lighten-2"), E.div(A.className("col s12"), Text("CSW Filter Wheel Demo"))),
-      E.div(A.className("row"), E.div(Component(FormComboBox, "Filter", filters).withHandler(s => itemSelected("Filter", s)))),
-      E.div(A.className("row"),
-            E.div(Component(FormComboBox, "Disperser", dispersers).withHandler(s => itemSelected("Disperser", s))))
+      title,
+      E.div(A.className("row"), E.div(filterComponent)),
+      E.div(A.className("row"), E.div(disperserComponent))
     )
   }
 
@@ -81,9 +92,11 @@ case class MainComponent() extends Component[NoEmit] with AssemblyJsonSupport {
             if (event.eventName == filterEventName) {
               val filter = event.get(filterKey).head.head
               println(s"Selected filter from event: $filter")
+              currentFilter.set(filter)
             } else if (event.eventName == disperserEventName) {
               val disperser = event.get(disperserKey).head.head
               println(s"Selected disperser from event: $disperser")
+              currentDisperser.set(disperser)
             }
           case event =>
             println(s"Received unexpected event: $event")
