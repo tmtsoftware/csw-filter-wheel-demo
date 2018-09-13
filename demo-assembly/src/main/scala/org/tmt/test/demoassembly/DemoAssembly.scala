@@ -9,9 +9,10 @@ import csw.messages.commands.CommandIssue.{MissingKeyIssue, OtherIssue, Unresolv
 import csw.messages.commands.CommandResponse.Error
 import csw.messages.commands.matchers.DemandMatcherAll
 import csw.messages.commands.{CommandName, CommandResponse, ControlCommand, Setup}
-import csw.messages.params.generics.Key
+import csw.messages.events.{EventKey, EventName, SystemEvent}
+import csw.messages.params.generics.{Key, KeyType}
 import csw.messages.params.models.Prefix
-import csw.messages.params.states.{DemandState, StateName}
+import csw.messages.params.states.{CurrentState, DemandState, StateName}
 import csw.services.command.scaladsl.CommandService
 import csw.services.location.api.models.{AkkaLocation, LocationRemoved, LocationUpdated, TrackingEvent}
 import org.tmt.test.demohcd.FilterHcd._
@@ -38,6 +39,23 @@ object DemoAssembly {
 
   // For callers: Must match config file
   val demoPrefix = Prefix("test.DemoAssembly")
+
+  val filterNameKey: Key[String] = KeyType.StringKey.make("filterName")
+
+  val filterEventName = EventName("filterEvent")
+
+  val filterEventKey = EventKey(filterPrefix, filterEventName)
+
+  val disperserNameKey: Key[String] = KeyType.StringKey.make("disperserName")
+
+  val disperserEventName = EventName("disperserEvent")
+
+  val disperserEventKey = EventKey(disperserPrefix, disperserEventName)
+
+  // XXX TODO: Get these from the config service?
+  val filters = List("None", "g_G0301", "r_G0303", "i_G0302", "z_G0304", "Z_G0322", "Y_G0323", "u_G0308", "BadFilter")
+  val dispersers =
+    List("Mirror", "B1200_G5301", "R831_G5302", "B600_G5303", "B600_G5307", "R600_G5304", "R400_G5305", "R150_G5306")
 }
 
 /**
@@ -60,6 +78,7 @@ class DemoAssemblyHandlers(
   private val log                                       = loggerFactory.getLogger
   private var maybeFilterHcd: Option[CommandService]    = None
   private var maybeDisperserHcd: Option[CommandService] = None
+  private val eventPublisher                            = cswServices.eventService.defaultPublisher
 
   override def initialize(): Future[Unit] = async {
     log.debug("Initialize called")
@@ -72,9 +91,13 @@ class DemoAssemblyHandlers(
         val loc = location.asInstanceOf[AkkaLocation]
         loc.connection match {
           case `filterConnection` =>
-            maybeFilterHcd = Some(new CommandService(loc)(ctx.system))
+            val filterHcd = new CommandService(loc)(ctx.system)
+            maybeFilterHcd = Some(filterHcd)
+            filterHcd.subscribeOnlyCurrentState(Set(filterStateName), filterStateChanged)
           case `disperserConnection` =>
-            maybeDisperserHcd = Some(new CommandService(loc)(ctx.system))
+            val disperserHcd = new CommandService(loc)(ctx.system)
+            maybeDisperserHcd = Some(disperserHcd)
+            disperserHcd.subscribeOnlyCurrentState(Set(disperserStateName), disperserStateChanged)
           case x =>
             log.error(s"Unexpected location received: $x")
         }
@@ -88,6 +111,18 @@ class DemoAssemblyHandlers(
             log.error(s"Unexpected location removed: $x")
         }
     }
+  }
+
+  private def filterStateChanged(cs: CurrentState): Unit = {
+    val value = cs.get(filterKey).head.head
+    // XXX TODO convert Int to name...
+    eventPublisher.publish(SystemEvent(filterEventKey.source, filterEventKey.eventName).add(filterKey.set(value)))
+  }
+
+  private def disperserStateChanged(cs: CurrentState): Unit = {
+    val value = cs.get(disperserKey).head.head
+    // XXX TODO convert Int to name...
+    eventPublisher.publish(SystemEvent(disperserEventKey.source, disperserEventKey.eventName).add(disperserKey.set(value)))
   }
 
   private def validateCommand(controlCommand: ControlCommand,
@@ -115,8 +150,8 @@ class DemoAssemblyHandlers(
 
   override def validateCommand(controlCommand: ControlCommand): CommandResponse = {
     val responses = List(
-      validateCommand(controlCommand, "filter", maybeFilterHcd, filterKey, filters),
-      validateCommand(controlCommand, "disperser", maybeDisperserHcd, disperserKey, dispersers)
+      validateCommand(controlCommand, "filter", maybeFilterHcd, filterNameKey, filters),
+      validateCommand(controlCommand, "disperser", maybeDisperserHcd, disperserNameKey, dispersers)
     ).flatten
     if (responses.isEmpty)
       CommandResponse.Invalid(controlCommand.runId, MissingKeyIssue(s"Missing required filter or disperser key"))
@@ -129,26 +164,29 @@ class DemoAssemblyHandlers(
   }
 
   private def onSubmit(controlCommand: Setup,
+                       names: List[String],
                        prefix: Prefix,
                        currentStateName: StateName,
                        commandName: CommandName,
-                       name: String,
+                       logName: String,
                        maybeHcd: Option[CommandService],
-                       key: Key[String]): Unit = {
+                       key: Key[String],
+                       hcdKey: Key[Int]): Unit = {
 
     maybeHcd.foreach { hcd =>
       controlCommand.get(key).foreach { param =>
-        val target = param.head
-        val setup  = Setup(componentInfo.prefix, commandName, controlCommand.maybeObsId).add(key.set(target))
+        // convert String name passed to assembly to Int encoder value required by HCD
+        val target = names.indexOf(param.head)
+        val setup  = Setup(componentInfo.prefix, commandName, controlCommand.maybeObsId).add(hcdKey.set(target))
         commandResponseManager.addSubCommand(controlCommand.runId, setup.runId)
-        val demandMatcher = DemandMatcherAll(DemandState(prefix, currentStateName).add(key.set(target)), timeout)
+        val demandMatcher = DemandMatcherAll(DemandState(prefix, currentStateName).add(hcdKey.set(target)), timeout)
         val response      = hcd.onewayAndMatch(setup, demandMatcher)
         response.onComplete {
           case Success(commandResponse) =>
-            log.info(s"Set $name reponded with $commandResponse")
+            log.info(s"Set $logName reponded with $commandResponse")
             commandResponseManager.updateSubCommand(setup.runId, commandResponse)
           case Failure(ex) =>
-            log.error(s"Set $name error", ex = ex)
+            log.error(s"Set $logName error", ex = ex)
             commandResponseManager.updateSubCommand(setup.runId, Error(setup.runId, ex.toString))
         }
       }
@@ -160,8 +198,16 @@ class DemoAssemblyHandlers(
 
     controlCommand match {
       case s @ Setup(_, _, `demoCmd`, _, _) =>
-        onSubmit(s, filterPrefix, filterStateName, filterCmd, "filter", maybeFilterHcd, filterKey)
-        onSubmit(s, disperserPrefix, disperserStateName, disperserCmd, "disperser", maybeDisperserHcd, disperserKey)
+        onSubmit(s, filters, filterPrefix, filterStateName, filterCmd, "filter", maybeFilterHcd, filterNameKey, filterKey)
+        onSubmit(s,
+                 dispersers,
+                 disperserPrefix,
+                 disperserStateName,
+                 disperserCmd,
+                 "disperser",
+                 maybeDisperserHcd,
+                 disperserNameKey,
+                 disperserKey)
 
       case x =>
         // Should not happen

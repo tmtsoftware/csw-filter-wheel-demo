@@ -2,11 +2,9 @@ package org.tmt.test.demohcd
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.Behavior
 import csw.framework.CurrentStatePublisher
-import csw.messages.events.{EventKey, SystemEvent}
 import csw.messages.params.generics.Key
 import csw.messages.params.models.Prefix
 import csw.messages.params.states.{CurrentState, StateName}
-import csw.services.event.api.scaladsl.EventPublisher
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -15,32 +13,20 @@ import scala.concurrent.duration.FiniteDuration
 private[demohcd] object WorkerActor {
   def working(delay: FiniteDuration,
               currentStatePublisher: CurrentStatePublisher,
-              eventPublisher: EventPublisher,
               prefix: Prefix,
               currentStateName: StateName,
-              key: Key[String],
-              values: List[String],
-              targetValue: String,
-              currentValue: String,
-              eventKey: EventKey): Behavior[String] = Behaviors.receive { (ctx, newTargetValue) =>
+              key: Key[Int],
+              numValues: Int,
+              targetValue: Int,
+              currentValue: Int): Behavior[Int] = Behaviors.receive { (ctx, newTargetValue) =>
     currentStatePublisher.publish(CurrentState(prefix, currentStateName, Set(key.set(currentValue))))
-    eventPublisher.publish(SystemEvent(eventKey.source, eventKey.eventName).add(key.set(currentValue)))
 
     if (currentValue == newTargetValue) Behaviors.same
     else {
-      val i               = values.indexOf(currentValue) + 1
-      val newCurrentValue = values(i % values.size)
+      val i               = currentValue + 1
+      val newCurrentValue = i % numValues
       ctx.schedule(delay, ctx.self, newTargetValue)
-      working(delay,
-              currentStatePublisher,
-              eventPublisher,
-              prefix,
-              currentStateName,
-              key,
-              values,
-              newTargetValue,
-              newCurrentValue,
-              eventKey)
+      working(delay, currentStatePublisher, prefix, currentStateName, key, numValues, newTargetValue, newCurrentValue)
     }
   }
 }

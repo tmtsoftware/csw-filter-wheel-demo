@@ -1,6 +1,14 @@
 package demo
 
 import com.github.ahnfelt.react4s._
+import csw.messages.commands.CommandResponse
+import csw.messages.commands.CommandResponse.{Accepted, Completed, Error, Invalid}
+
+object FormComboBox {
+  // Colors for the icons based on commandResponse
+  val normalColor = ""
+  val errorColor  = "red-text"
+}
 
 /**
  * Displays a label with a menu of choices and updates the display with the given current state variable.
@@ -9,14 +17,20 @@ import com.github.ahnfelt.react4s._
  * @param choices the choices for the menu
  * @param currentState a state variable that can be updated from the outside with the current value
  */
-case class FormComboBox(labelStr: P[String], choices: P[List[String]], currentState: P[String]) extends Component[String] {
+case class FormComboBox(labelStr: P[String],
+                        choices: P[List[String]],
+                        currentState: P[String],
+                        commandResponse: P[CommandResponse])
+    extends Component[String] {
+
+  import FormComboBox._
+
   val targetState = State("")
 
   override def render(get: Get): Element = {
     val label        = get(labelStr)
     val currentValue = get(currentState)
     val choiceList   = get(choices)
-    val targetValue  = if (get(targetState).isEmpty) choiceList.head else get(targetState)
 
     val labelItem  = Text(label)
     val labelDiv   = E.div(A.className("col s1"), labelItem)
@@ -24,12 +38,17 @@ case class FormComboBox(labelStr: P[String], choices: P[List[String]], currentSt
     val selectItem = E.select(A.className("input-field"), A.onChangeText(itemSelected), Tags(items))
     val selectDiv  = E.div(A.className("col s3"), selectItem)
 
-    val i         = choiceList.indexOf(currentValue)
-    val matched   = currentValue == targetValue
-    val iconName  = if (matched) "done" else if (i == 0) "filter_none" else s"filter_$i"
-    val iconLabel = if (matched) "" else currentValue
+    val i = choiceList.indexOf(currentValue)
+    val (iconName, iconLabel, iconColor) = get(commandResponse) match {
+      case Accepted(_) =>
+        (if (i == 0) "filter_none" else s"filter_$i", currentValue, normalColor)
+      case Completed(_)      => ("done", "", normalColor)
+      case Error(_, msg)     => ("error_outline", msg, errorColor)
+      case Invalid(_, issue) => ("error_outline", issue.reason, errorColor)
+      case x                 => ("error_outline", s"unexpected command response: $x", errorColor)
+    }
 
-    val selectStateIcon  = E.i(A.className("material-icons"), Text(iconName))
+    val selectStateIcon  = E.i(A.className(s"material-icons $iconColor"), Text(iconName))
     val selectStateLabel = Text(s" $iconLabel")
     val selectStateDiv   = E.div(A.className("col s8"), selectStateIcon, selectStateLabel)
 
@@ -39,6 +58,8 @@ case class FormComboBox(labelStr: P[String], choices: P[List[String]], currentSt
   // called when an item is selected
   private def itemSelected(value: String): Unit = {
     targetState.set(value)
+
+    // This allows the main component to be notified when an item is selected
     emit(value)
   }
 

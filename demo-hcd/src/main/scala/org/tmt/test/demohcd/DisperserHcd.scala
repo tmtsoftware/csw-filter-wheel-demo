@@ -1,18 +1,17 @@
 package org.tmt.test.demohcd
 
+import csw.messages.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnsupportedCommandIssue}
 import csw.messages.commands.CommandResponse.Error
 import csw.messages.commands.{CommandName, CommandResponse, ControlCommand, Setup}
 import csw.messages.params.generics.{Key, KeyType}
 
-import scala.concurrent.duration._
 import scala.async.Async.async
 import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.duration._
 import akka.actor.typed.scaladsl.ActorContext
 import csw.framework.models.CswServices
 import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
 import csw.messages.TopLevelActorMessage
-import csw.messages.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnsupportedCommandIssue}
-import csw.messages.events.{EventKey, EventName}
 import csw.messages.params.models.Prefix
 import csw.messages.params.states.StateName
 import csw.services.location.api.models.{ComponentId, ComponentType, TrackingEvent}
@@ -25,14 +24,12 @@ class DisperserHcdBehaviorFactory extends ComponentBehaviorFactory {
       cswServices: CswServices
   ): ComponentHandlers =
     new DisperserHcdHandlers(ctx, cswServices)
+
 }
 
 object DisperserHcd {
 
-  val dispersers =
-    List("Mirror", "B1200_G5301", "R831_G5302", "B600_G5303", "B600_G5307", "R600_G5304", "R400_G5305", "R150_G5306")
-
-  val disperserKey: Key[String] = KeyType.StringKey.make("disperser")
+  val disperserKey: Key[Int] = KeyType.IntKey.make("disperser")
 
   val disperserCmd = CommandName("setDisperser")
 
@@ -43,9 +40,8 @@ object DisperserHcd {
 
   val disperserStateName = StateName("DisperserState")
 
-  val disperserEventName = EventName("disperserEvent")
-
-  val disperserEventKey = EventKey(disperserPrefix, disperserEventName)
+  // XXX TODO: Get this from the config service
+  val numDispersers = 8
 }
 
 /**
@@ -65,27 +61,25 @@ class DisperserHcdHandlers(
 
   implicit val ec: ExecutionContextExecutor = ctx.executionContext
   private val log                           = loggerFactory.getLogger
-  private val eventPublisher                = eventService.defaultPublisher
 
   // Spawn an actor to simulate the work of moving the disperser wheel
   private val workActor = ctx.spawn(
     WorkerActor.working(
       1.second,
       currentStatePublisher,
-      eventPublisher,
       componentInfo.prefix,
       disperserStateName,
       disperserKey,
-      dispersers,
-      dispersers.head,
-      dispersers.head,
-      disperserEventKey,
+      numDispersers,
+      0,
+      0
     ),
     "disperserWorker"
   )
 
   override def initialize(): Future[Unit] = async {
     log.debug("Initialize called")
+    workActor ! 0
   }
 
   override def onLocationTrackingEvent(trackingEvent: TrackingEvent): Unit = {
@@ -97,10 +91,10 @@ class DisperserHcdHandlers(
       case s @ Setup(_, _, `disperserCmd`, _, _) =>
         if (s.exists(disperserKey)) {
           val disperser = s.get(disperserKey).get.head
-          if (dispersers.contains(disperser))
+          if (disperser >= 0 && disperser < numDispersers)
             CommandResponse.Accepted(controlCommand.runId)
           else
-            CommandResponse.Invalid(controlCommand.runId, OtherIssue(s"Unknown disperser: $disperser"))
+            CommandResponse.Invalid(controlCommand.runId, OtherIssue(s"Unknown disperser index: $disperser"))
         } else {
           CommandResponse.Invalid(controlCommand.runId, MissingKeyIssue(s"Missing ${disperserKey.keyName} key"))
         }

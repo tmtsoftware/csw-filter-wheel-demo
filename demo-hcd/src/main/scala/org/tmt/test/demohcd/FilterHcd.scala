@@ -12,7 +12,6 @@ import akka.actor.typed.scaladsl.ActorContext
 import csw.framework.models.CswServices
 import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
 import csw.messages.TopLevelActorMessage
-import csw.messages.events.{EventKey, EventName}
 import csw.messages.params.models.Prefix
 import csw.messages.params.states.StateName
 import csw.services.location.api.models.{ComponentId, ComponentType, TrackingEvent}
@@ -30,9 +29,7 @@ class FilterHcdBehaviorFactory extends ComponentBehaviorFactory {
 
 object FilterHcd {
 
-  val filters = List("None", "g_G0301", "r_G0303", "i_G0302", "z_G0304", "Z_G0322", "Y_G0323", "u_G0308")
-
-  val filterKey: Key[String] = KeyType.StringKey.make("filter")
+  val filterKey: Key[Int] = KeyType.IntKey.make("filter")
 
   val filterCmd = CommandName("setFilter")
 
@@ -43,9 +40,8 @@ object FilterHcd {
 
   val filterStateName = StateName("FilterState")
 
-  val filterEventName = EventName("filterEvent")
-
-  val filterEventKey = EventKey(filterPrefix, filterEventName)
+  // XXX TODO: Get this from the config service
+  val numFilters = 8
 }
 
 /**
@@ -65,27 +61,25 @@ class FilterHcdHandlers(
 
   implicit val ec: ExecutionContextExecutor = ctx.executionContext
   private val log                           = loggerFactory.getLogger
-  private val eventPublisher                = eventService.defaultPublisher
 
   // Spawn an actor to simulate the work of moving the filter wheel
   private val workActor = ctx.spawn(
     WorkerActor.working(
       1.second,
       currentStatePublisher,
-      eventPublisher,
       componentInfo.prefix,
       filterStateName,
       filterKey,
-      filters,
-      filters.head,
-      filters.head,
-      filterEventKey
+      numFilters,
+      0,
+      0
     ),
     "filterWorker"
   )
 
   override def initialize(): Future[Unit] = async {
     log.debug("Initialize called")
+    workActor ! 0
   }
 
   override def onLocationTrackingEvent(trackingEvent: TrackingEvent): Unit = {
@@ -97,10 +91,10 @@ class FilterHcdHandlers(
       case s @ Setup(_, _, `filterCmd`, _, _) =>
         if (s.exists(filterKey)) {
           val filter = s.get(filterKey).get.head
-          if (filters.contains(filter))
+          if (filter >= 0 && filter < numFilters)
             CommandResponse.Accepted(controlCommand.runId)
           else
-            CommandResponse.Invalid(controlCommand.runId, OtherIssue(s"Unknown filter: $filter"))
+            CommandResponse.Invalid(controlCommand.runId, OtherIssue(s"Unknown filter index: $filter"))
         } else {
           CommandResponse.Invalid(controlCommand.runId, MissingKeyIssue(s"Missing ${filterKey.keyName} key"))
         }
