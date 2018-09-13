@@ -2,46 +2,38 @@ package demo
 
 import com.github.ahnfelt.react4s._
 
-//object FormComboBox {
-//  case class IconCss(angle: Int)
-//      extends CssClass(
-//        S.transform(s"rotate(${angle}deg)")
-//      )
-//
-//}
-
+/**
+ * Displays a label with a menu of choices and updates the display with the given current state variable.
+ *
+ * @param labelStr the label to display
+ * @param choices the choices for the menu
+ * @param currentState a state variable that can be updated from the outside with the current value
+ */
 case class FormComboBox(labelStr: P[String], choices: P[List[String]], currentState: P[String]) extends Component[String] {
-//  import FormComboBox._
-
   val targetState = State("")
 
   override def render(get: Get): Element = {
     val label        = get(labelStr)
-    val idStr        = label.toLowerCase()
-    val stateIdStr   = idStr + "State"
     val currentValue = get(currentState)
-    val targetValue  = get(targetState)
     val choiceList   = get(choices)
-    println(s"XXX $label current value is $currentValue, target value is $targetValue")
+    val targetValue  = if (get(targetState).isEmpty) choiceList.head else get(targetState)
 
+    val labelItem  = Text(label)
+    val labelDiv   = E.div(A.className("col s1"), labelItem)
     val items      = choiceList.map(s => E.option(A.value(s), Text(s)))
-    val selectItem = E.select(A.id(idStr), A.onChangeText(itemSelected), Tags(items))
+    val selectItem = E.select(A.className("input-field"), A.onChangeText(itemSelected), Tags(items))
+    val selectDiv  = E.div(A.className("col s3"), selectItem)
 
     val i         = choiceList.indexOf(currentValue)
     val matched   = currentValue == targetValue
     val iconName  = if (matched) "done" else if (i == 0) "filter_none" else s"filter_$i"
     val iconLabel = if (matched) "" else currentValue
 
-    val selectState =
-      E.span(A.id(stateIdStr), E.i(A.className("material-icons"), Text(iconName)), Text(iconLabel))
+    val selectStateIcon  = E.i(A.className("material-icons"), Text(iconName))
+    val selectStateLabel = Text(s" $iconLabel")
+    val selectStateDiv   = E.div(A.className("col s8"), selectStateIcon, selectStateLabel)
 
-    println(s"XXX render $label")
-
-    E.div(
-      E.label(A.className("col s1"), A.`for`(idStr), Text(label)),
-      E.div(A.className("col s6 input-field"), selectItem),
-      E.div(A.className("col s1"), selectState),
-    )
+    E.div(A.className("row valign-wrapper"), labelDiv, selectDiv, selectStateDiv)
   }
 
   // called when an item is selected

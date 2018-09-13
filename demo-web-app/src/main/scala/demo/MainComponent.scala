@@ -32,7 +32,9 @@ object MainComponent {
   // For callers: Must match config file
   val demoPrefix = Prefix("test.demo")
 
-  private val obsId = ObsId("2023-Q22-4-33")
+  val obsId = ObsId("2023-Q22-4-33")
+
+  val titleStr = "CSW Filter Wheel Demo"
 }
 
 case class MainComponent() extends Component[NoEmit] with AssemblyJsonSupport {
@@ -41,7 +43,7 @@ case class MainComponent() extends Component[NoEmit] with AssemblyJsonSupport {
   private val currentFilter    = State(filters.head)
   private val currentDisperser = State(dispersers.head)
 
-  private val title = E.div(A.className("row teal lighten-2"), E.div(A.className("col s8"), Text("CSW Filter Wheel Demo")))
+  private val title = E.div(A.className("row"), E.div(A.className("col s6  teal lighten-2"), Text(titleStr)))
 
   subscribeToEvents()
 
@@ -57,14 +59,12 @@ case class MainComponent() extends Component[NoEmit] with AssemblyJsonSupport {
     E.div(
       A.className("container"),
       title,
-      E.div(A.className("row"), E.div(filterComponent)),
-      E.div(A.className("row"), E.div(disperserComponent))
+      filterComponent,
+      disperserComponent
     )
   }
 
   private def itemSelected(name: String, value: String): Unit = {
-    println(s"XXX Selected $name: $value")
-
     val assemblyClient = WebClients.assemblyCommandClient(assemblyName)
     val setup = if (name == "Filter") {
       Setup(demoPrefix, demoCmd, Some(obsId)).add(filterKey.set(value))
@@ -73,7 +73,8 @@ case class MainComponent() extends Component[NoEmit] with AssemblyJsonSupport {
     }
 
     assemblyClient.submit(setup).onComplete {
-      case Success(response) => println(s"\nResponse $response")
+      case Success(response) =>
+        println(s"\nResponse $response")
       case Failure(ex) =>
         ex.printStackTrace()
         println(s"\nResponse $ex")
