@@ -1,5 +1,5 @@
 package demo
-import com.github.ahnfelt.react4s.{Component, ReactBridge}
+import com.github.ahnfelt.react4s.Component
 import demo.facade.NpmReactBridge
 
 object DemoWebApp {

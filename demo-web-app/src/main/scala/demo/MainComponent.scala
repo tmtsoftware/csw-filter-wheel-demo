@@ -2,20 +2,18 @@ package demo
 
 import com.github.ahnfelt.react4s._
 import csw.messages.commands.{CommandName, Setup}
-import csw.messages.events.{Event, EventName, SystemEvent}
+import csw.messages.events.{EventName, SystemEvent}
 import csw.messages.params.generics.{Key, KeyType}
 import csw.messages.params.models.{ObsId, Prefix}
-import org.scalajs.dom.EventSource
-import play.api.libs.json.Json
+import demo.util.EventServiceWebClient
 import tmt.ocs.WebClients
-import tmt.ocs.codecs.AssemblyJsonSupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 
 object MainComponent {
   // XXX TODO: Get these values dynamically from the HCDs?
-  val filters                = List("None", "g_G0301", "r_G0303", "i_G0302", "z_G0304", "Z_G0322", "Y_G0323", "u_G0308")
+  val filters                = List("None", "g_G0301", "r_G0303", "i_G0302", "z_G0304", "Z_G0322", "Y_G0323", "u_G0308", "BadFilter")
   val filterKey: Key[String] = KeyType.StringKey.make("filter")
   val filterEventName        = EventName("filterEvent")
 
@@ -32,12 +30,13 @@ object MainComponent {
   // For callers: Must match config file
   val demoPrefix = Prefix("test.demo")
 
+  // For testing
   val obsId = ObsId("2023-Q22-4-33")
 
   val titleStr = "CSW Filter Wheel Demo"
 }
 
-case class MainComponent() extends Component[NoEmit] with AssemblyJsonSupport {
+case class MainComponent() extends Component[NoEmit] {
   import MainComponent._
 
   private val currentFilter    = State(filters.head)
@@ -45,7 +44,18 @@ case class MainComponent() extends Component[NoEmit] with AssemblyJsonSupport {
 
   private val title = E.div(A.className("row"), E.div(A.className("col s6  teal lighten-2"), Text(titleStr)))
 
-  subscribeToEvents()
+  EventServiceWebClient.subscribeToEvents("test") {
+    case event: SystemEvent =>
+      if (event.eventName == filterEventName) {
+        val filter = event.get(filterKey).head.head
+        currentFilter.set(filter)
+      } else if (event.eventName == disperserEventName) {
+        val disperser = event.get(disperserKey).head.head
+        currentDisperser.set(disperser)
+      }
+    case event =>
+      println(s"Received unexpected event: $event")
+  }
 
   override def render(get: Get): Element = {
     val filterComponent =
@@ -82,28 +92,4 @@ case class MainComponent() extends Component[NoEmit] with AssemblyJsonSupport {
 
   }
 
-  // XXX TODO: Add utility for subscribing to events
-  private def subscribeToEvents(): Unit = {
-    val client = new EventSource("http://localhost:9090/events/subscribe/test")
-    client.onmessage = { x =>
-      val data = x.data.toString
-      if (data.nonEmpty) {
-        Json.parse(data).as[Event] match {
-          case event: SystemEvent =>
-            println(s"Received event: $event")
-            if (event.eventName == filterEventName) {
-              val filter = event.get(filterKey).head.head
-              println(s"Selected filter from event: $filter")
-              currentFilter.set(filter)
-            } else if (event.eventName == disperserEventName) {
-              val disperser = event.get(disperserKey).head.head
-              println(s"Selected disperser from event: $disperser")
-              currentDisperser.set(disperser)
-            }
-          case event =>
-            println(s"Received unexpected event: $event")
-        }
-      }
-    }
-  }
 }
