@@ -7,8 +7,8 @@ import csw.messages.params.generics.{Key, KeyType}
 import csw.messages.params.models.{ObsId, Prefix}
 import org.scalajs.dom.EventSource
 import play.api.libs.json.Json
-import tmt.WebClients
-import tmt.assembly.codecs.AssemblyJsonSupport
+import tmt.ocs.WebClients
+import tmt.ocs.codecs.AssemblyJsonSupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
@@ -82,8 +82,9 @@ case class MainComponent() extends Component[NoEmit] with AssemblyJsonSupport {
 
   }
 
+  // XXX TODO: Add utility for subscribing to events
   private def subscribeToEvents(): Unit = {
-    val client = new EventSource("http://localhost:9090/events/subscribe/subsystem/test")
+    val client = new EventSource("http://localhost:9090/events/subscribe/test")
     client.onmessage = { x =>
       val data = x.data.toString
       if (data.nonEmpty) {
