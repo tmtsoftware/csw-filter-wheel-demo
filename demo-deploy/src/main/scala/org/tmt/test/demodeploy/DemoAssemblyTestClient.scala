@@ -12,12 +12,12 @@ import csw.services.logging.scaladsl.{GenericLoggerFactory, LoggingSystemFactory
 import akka.actor.typed.scaladsl.adapter._
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.Timeout
+import csw.command.scaladsl.CommandService
 import csw.messages.commands.CommandResultType.Negative
 import csw.messages.commands.{CommandResponse, Setup}
 import csw.messages.events._
 import csw.messages.params.formats.JsonSupport
 import csw.messages.params.models.ObsId
-import csw.services.command.scaladsl.CommandService
 import csw.services.event.EventServiceFactory
 import csw.services.event.api.scaladsl.EventService
 import csw.services.location.api.models.ComponentType.Assembly
@@ -64,12 +64,12 @@ object DemoAssemblyTestClient extends App {
     override def onMessage(msg: Event): Behavior[Event] = {
       msg match {
         case e: SystemEvent =>
-          e.get(filterKey)
+          e.get(filterNameKey)
             .foreach { p =>
               val eventValue = p.head
               log.info(s"Received filter event with value: $eventValue")
             }
-          e.get(disperserKey)
+          e.get(disperserNameKey)
             .foreach { p =>
               val eventValue = p.head
               log.info(s"Received disperser event with value: $eventValue")
@@ -117,8 +117,8 @@ object DemoAssemblyTestClient extends App {
   }
 
   private def makeSetup(filter: String, disperser: String): Setup = {
-    val i1 = filterKey.set(filter)
-    val i2 = disperserKey.set(disperser)
+    val i1 = filterNameKey.set(filter)
+    val i2 = disperserNameKey.set(disperser)
     Setup(demoPrefix, demoCmd, Some(obsId)).add(i1).add(i2)
   }
 

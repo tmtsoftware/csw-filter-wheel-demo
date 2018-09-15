@@ -17,7 +17,7 @@ object CSW {
 //  private val Org     = "org.tmt"
 
   private val Org     = "com.github.tmtsoftware.csw-prod"
-  private val Version = "b632fca" // Must match version used by esw-prototype!
+  private val Version = "00a48f49b" // Must match version used by esw-prototype and the version of the installed csw-prod services!
 
 
   val `csw-location`      = Org %% "csw-location" % Version
@@ -32,7 +32,7 @@ object CSW {
 object ESW {
   private val Version = "0.1.0-SNAPSHOT"
   private val Org     = "org.tmt"
-  val `sequencer-api` = dep(Org %%% "sequencer-api" % Version)
+  val `ocs-api` = dep(Org %%% "ocs-api" % Version)
 }
 
 object React4s {

@@ -2,18 +2,18 @@ package org.tmt.test.demoassembly
 
 import akka.actor.typed.scaladsl.ActorContext
 import akka.util.Timeout
-import csw.framework.models.CswServices
+import csw.command.messages.TopLevelActorMessage
+import csw.command.models.matchers.DemandMatcherAll
+import csw.command.scaladsl.CommandService
+import csw.framework.models.CswContext
 import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
-import csw.messages.TopLevelActorMessage
 import csw.messages.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnresolvedLocationsIssue, UnsupportedCommandIssue}
 import csw.messages.commands.CommandResponse.Error
-import csw.messages.commands.matchers.DemandMatcherAll
 import csw.messages.commands.{CommandName, CommandResponse, ControlCommand, Setup}
 import csw.messages.events.{EventKey, EventName, SystemEvent}
 import csw.messages.params.generics.{Key, KeyType}
 import csw.messages.params.models.Prefix
 import csw.messages.params.states.{CurrentState, DemandState, StateName}
-import csw.services.command.scaladsl.CommandService
 import csw.services.location.api.models.{AkkaLocation, LocationRemoved, LocationUpdated, TrackingEvent}
 import org.tmt.test.demohcd.FilterHcd._
 import org.tmt.test.demohcd.DisperserHcd._
@@ -27,7 +27,7 @@ class DemoAssemblyBehaviorFactory extends ComponentBehaviorFactory {
 
   override def handlers(
       ctx: ActorContext[TopLevelActorMessage],
-      cswServices: CswServices
+      cswServices: CswContext
   ): ComponentHandlers =
     new DemoAssemblyHandlers(ctx, cswServices)
 
@@ -68,17 +68,17 @@ object DemoAssembly {
  */
 class DemoAssemblyHandlers(
     ctx: ActorContext[TopLevelActorMessage],
-    cswServices: CswServices
-) extends ComponentHandlers(ctx, cswServices) {
+    cswCtx: CswContext
+) extends ComponentHandlers(ctx, cswCtx) {
   import DemoAssembly._
-  import cswServices._
+  import cswCtx._
 
   implicit val ec: ExecutionContextExecutor             = ctx.executionContext
   implicit val timeout: Timeout                         = 15.seconds
   private val log                                       = loggerFactory.getLogger
   private var maybeFilterHcd: Option[CommandService]    = None
   private var maybeDisperserHcd: Option[CommandService] = None
-  private val eventPublisher                            = cswServices.eventService.defaultPublisher
+  private val eventPublisher                            = cswCtx.eventService.defaultPublisher
 
   override def initialize(): Future[Unit] = async {
     log.debug("Initialize called")
@@ -115,14 +115,14 @@ class DemoAssemblyHandlers(
 
   private def filterStateChanged(cs: CurrentState): Unit = {
     val value = cs.get(filterKey).head.head
-    // XXX TODO convert Int to name...
-    eventPublisher.publish(SystemEvent(filterEventKey.source, filterEventKey.eventName).add(filterKey.set(value)))
+    eventPublisher.publish(SystemEvent(filterEventKey.source, filterEventKey.eventName).add(filterNameKey.set(filters(value))))
   }
 
   private def disperserStateChanged(cs: CurrentState): Unit = {
     val value = cs.get(disperserKey).head.head
-    // XXX TODO convert Int to name...
-    eventPublisher.publish(SystemEvent(disperserEventKey.source, disperserEventKey.eventName).add(disperserKey.set(value)))
+    eventPublisher.publish(
+      SystemEvent(disperserEventKey.source, disperserEventKey.eventName).add(disperserNameKey.set(dispersers(value)))
+    )
   }
 
   private def validateCommand(controlCommand: ControlCommand,

@@ -38,7 +38,7 @@ lazy val `demo-web-app` = project
       Utils.`play-json`.value,
       Utils.`enumeratum`.value,
       Utils.`enumeratum-play-json`.value,
-      ESW.`sequencer-api`.value
+      ESW.`ocs-api`.value
     ),
     version in webpack := "4.8.1",
     version in startWebpackDevServer := "3.1.4",

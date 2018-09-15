@@ -14,16 +14,16 @@ import scala.util.{Failure, Success}
 
 object MainComponent {
   // XXX TODO: Get these values dynamically from the HCDs?
-  val filters                = List("None", "g_G0301", "r_G0303", "i_G0302", "z_G0304", "Z_G0322", "Y_G0323", "u_G0308", "BadFilter")
-  val filterKey: Key[String] = KeyType.StringKey.make("filter")
-  val filterEventName        = EventName("filterEvent")
-  val filter                 = "Filter"
+  val filters                    = List("None", "g_G0301", "r_G0303", "i_G0302", "z_G0304", "Z_G0322", "Y_G0323", "u_G0308", "BadFilter")
+  val filterNameKey: Key[String] = KeyType.StringKey.make("filterName")
+  val filterEventName            = EventName("filterEvent")
+  val filter                     = "Filter"
 
   val dispersers =
     List("Mirror", "B1200_G5301", "R831_G5302", "B600_G5303", "B600_G5307", "R600_G5304", "R400_G5305", "R150_G5306")
-  val disperserKey: Key[String] = KeyType.StringKey.make("disperser")
-  val disperserEventName        = EventName("disperserEvent")
-  val disperser                 = "Disperser"
+  val disperserNameKey: Key[String] = KeyType.StringKey.make("disperserName")
+  val disperserEventName            = EventName("disperserEvent")
+  val disperser                     = "Disperser"
 
   val assemblyName = "DemoAssembly"
 
@@ -52,10 +52,10 @@ case class MainComponent() extends Component[NoEmit] {
   EventServiceWebClient.subscribeToEvents("test") {
     case event: SystemEvent =>
       if (event.eventName == filterEventName) {
-        val filter = event.get(filterKey).head.head
+        val filter = event.get(filterNameKey).get.head
         currentFilter.set(filter)
       } else if (event.eventName == disperserEventName) {
-        val disperser = event.get(disperserKey).head.head
+        val disperser = event.get(disperserNameKey).get.head
         currentDisperser.set(disperser)
       }
     case event =>
@@ -85,9 +85,9 @@ case class MainComponent() extends Component[NoEmit] {
   private def itemSelected(name: String, value: String): Unit = {
     val assemblyClient = WebClients.assemblyCommandClient(assemblyName)
     val setup = if (name == filter) {
-      Setup(demoPrefix, demoCmd, Some(obsId)).add(filterKey.set(value))
+      Setup(demoPrefix, demoCmd, Some(obsId)).add(filterNameKey.set(value))
     } else {
-      Setup(demoPrefix, demoCmd, Some(obsId)).add(disperserKey.set(value))
+      Setup(demoPrefix, demoCmd, Some(obsId)).add(disperserNameKey.set(value))
     }
 
     val commandResponseState = commandResponseStateVariable(name)

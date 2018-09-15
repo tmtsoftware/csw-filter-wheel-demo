@@ -9,9 +9,9 @@ import scala.async.Async.async
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
 import akka.actor.typed.scaladsl.ActorContext
-import csw.framework.models.CswServices
+import csw.command.messages.TopLevelActorMessage
+import csw.framework.models.CswContext
 import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
-import csw.messages.TopLevelActorMessage
 import csw.messages.params.models.Prefix
 import csw.messages.params.states.StateName
 import csw.services.location.api.models.{ComponentId, ComponentType, TrackingEvent}
@@ -21,7 +21,7 @@ class DisperserHcdBehaviorFactory extends ComponentBehaviorFactory {
 
   override def handlers(
       ctx: ActorContext[TopLevelActorMessage],
-      cswServices: CswServices
+      cswServices: CswContext
   ): ComponentHandlers =
     new DisperserHcdHandlers(ctx, cswServices)
 
@@ -54,10 +54,10 @@ object DisperserHcd {
  */
 class DisperserHcdHandlers(
     ctx: ActorContext[TopLevelActorMessage],
-    cswServices: CswServices
-) extends ComponentHandlers(ctx, cswServices) {
+    cswCtx: CswContext
+) extends ComponentHandlers(ctx, cswCtx) {
   import DisperserHcd._
-  import cswServices._
+  import cswCtx._
 
   implicit val ec: ExecutionContextExecutor = ctx.executionContext
   private val log                           = loggerFactory.getLogger
