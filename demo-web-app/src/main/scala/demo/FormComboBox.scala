@@ -1,8 +1,8 @@
 package demo
 
 import com.github.ahnfelt.react4s._
-import csw.messages.commands.CommandResponse
-import csw.messages.commands.CommandResponse.{Accepted, Completed, Error, Invalid}
+import csw.params.commands.CommandResponse
+import csw.params.commands.CommandResponse.{Accepted, Completed, Error, Invalid}
 
 object FormComboBox {
   // Colors for the icons based on commandResponse

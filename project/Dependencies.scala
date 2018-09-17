@@ -4,10 +4,10 @@ object Dependencies {
 
   val `demo-assembly-deps` = Seq(
     CSW.`csw-framework`,
-    CSW.`csw-command`,
-    CSW.`csw-location`,
-    CSW.`csw-messages`,
-    CSW.`csw-logging`,
+//    CSW.`csw-command`,
+//    CSW.`csw-location-api`,
+//    CSW.`csw-messages`,
+//    CSW.`csw-logging`,
     Libs.`scalatest` % Test,
     Libs.`junit` % Test,
     Libs.`junit-interface` % Test
@@ -15,10 +15,10 @@ object Dependencies {
 
   val `demo-hcd-deps` = Seq(
     CSW.`csw-framework`,
-    CSW.`csw-command`,
-    CSW.`csw-location`,
-    CSW.`csw-messages`,
-    CSW.`csw-logging`,
+//    CSW.`csw-command`,
+//    CSW.`csw-location-api`,
+//    CSW.`csw-messages`,
+//    CSW.`csw-logging`,
     Libs.`scalatest` % Test,
     Libs.`junit` % Test,
     Libs.`junit-interface` % Test

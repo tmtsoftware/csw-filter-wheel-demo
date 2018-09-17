@@ -1,5 +1,5 @@
 package demo.util
-import csw.messages.events.Event
+import csw.params.events.Event
 import org.scalajs.dom.EventSource
 import play.api.libs.json.Json
 import tmt.ocs.codecs.AssemblyJsonSupport

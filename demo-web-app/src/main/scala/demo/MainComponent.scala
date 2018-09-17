@@ -1,11 +1,11 @@
 package demo
 
 import com.github.ahnfelt.react4s._
-import csw.messages.commands.CommandResponse.{Accepted, Completed, Error}
-import csw.messages.commands.{CommandName, CommandResponse, Setup}
-import csw.messages.events.{EventName, SystemEvent}
-import csw.messages.params.generics.{Key, KeyType}
-import csw.messages.params.models.{Id, ObsId, Prefix}
+import csw.params.commands.CommandResponse.{Accepted, Completed, Error}
+import csw.params.commands.{CommandName, CommandResponse, Setup}
+import csw.params.core.generics.{Key, KeyType}
+import csw.params.core.models.{Id, ObsId, Prefix}
+import csw.params.events.{EventName, SystemEvent}
 import demo.util.EventServiceWebClient
 import tmt.ocs.WebClients
 
