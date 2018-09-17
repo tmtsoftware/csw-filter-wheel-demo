@@ -7,14 +7,14 @@ import csw.command.models.matchers.DemandMatcherAll
 import csw.command.scaladsl.CommandService
 import csw.framework.models.CswContext
 import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
-import csw.messages.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnresolvedLocationsIssue, UnsupportedCommandIssue}
-import csw.messages.commands.CommandResponse.Error
-import csw.messages.commands.{CommandName, CommandResponse, ControlCommand, Setup}
-import csw.messages.events.{EventKey, EventName, SystemEvent}
-import csw.messages.params.generics.{Key, KeyType}
-import csw.messages.params.models.Prefix
-import csw.messages.params.states.{CurrentState, DemandState, StateName}
-import csw.services.location.api.models.{AkkaLocation, LocationRemoved, LocationUpdated, TrackingEvent}
+import csw.location.api.models.{AkkaLocation, LocationRemoved, LocationUpdated, TrackingEvent}
+import csw.params.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnresolvedLocationsIssue, UnsupportedCommandIssue}
+import csw.params.commands.CommandResponse.Error
+import csw.params.commands.{CommandName, CommandResponse, ControlCommand, Setup}
+import csw.params.core.generics.{Key, KeyType}
+import csw.params.core.models.Prefix
+import csw.params.core.states.{CurrentState, DemandState, StateName}
+import csw.params.events.{EventKey, EventName, SystemEvent}
 import org.tmt.test.demohcd.FilterHcd._
 import org.tmt.test.demohcd.DisperserHcd._
 

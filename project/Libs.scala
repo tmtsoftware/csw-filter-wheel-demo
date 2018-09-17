@@ -17,14 +17,10 @@ object CSW {
 //  private val Org     = "org.tmt"
 
   private val Org     = "com.github.tmtsoftware.csw-prod"
-  private val Version = "00a48f49b" // Must match version used by esw-prototype and the version of the installed csw-prod services!
+  private val Version = "c05acca" // Must match version used by esw-prototype and the version of the installed csw-prod services!
 
-  val `csw-location-api`  = Org %% "csw-location-api" % Version
   val `csw-config-client` = Org %% "csw-config-client" % Version
-  val `csw-logging`       = Org %% "csw-logging" % Version
   val `csw-framework`     = Org %% "csw-framework" % Version
-  val `csw-command`       = Org %% "csw-command" % Version
-  val `csw-messages`      = Org %% "csw-messages" % Version
   val `csw-params`        = dep(Org %%% "csw-params" % Version)
 }
 

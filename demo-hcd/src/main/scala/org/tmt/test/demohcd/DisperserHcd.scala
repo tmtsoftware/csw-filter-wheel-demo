@@ -1,10 +1,5 @@
 package org.tmt.test.demohcd
 
-import csw.messages.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnsupportedCommandIssue}
-import csw.messages.commands.CommandResponse.Error
-import csw.messages.commands.{CommandName, CommandResponse, ControlCommand, Setup}
-import csw.messages.params.generics.{Key, KeyType}
-
 import scala.async.Async.async
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
@@ -12,10 +7,14 @@ import akka.actor.typed.scaladsl.ActorContext
 import csw.command.messages.TopLevelActorMessage
 import csw.framework.models.CswContext
 import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
-import csw.messages.params.models.Prefix
-import csw.messages.params.states.StateName
-import csw.services.location.api.models.{ComponentId, ComponentType, TrackingEvent}
-import csw.services.location.api.models.Connection.AkkaConnection
+import csw.location.api.models.{ComponentId, ComponentType, TrackingEvent}
+import csw.location.api.models.Connection.AkkaConnection
+import csw.params.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnsupportedCommandIssue}
+import csw.params.commands.CommandResponse.Error
+import csw.params.commands.{CommandName, CommandResponse, ControlCommand, Setup}
+import csw.params.core.generics.{Key, KeyType}
+import csw.params.core.models.Prefix
+import csw.params.core.states.StateName
 
 class DisperserHcdBehaviorFactory extends ComponentBehaviorFactory {
 

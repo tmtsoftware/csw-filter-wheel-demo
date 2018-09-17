@@ -95,7 +95,7 @@ case class MainComponent() extends Component[NoEmit] {
     // Set state to Accepted while waiting for the final response
     commandResponseState.set(Accepted(setup.runId))
 
-    assemblyClient.submit(setup).onComplete {
+    assemblyClient.submitAndSubscribe(setup).onComplete {
       case Success(response) =>
         println(s"\nResponse $response")
         commandResponseState.set(response)

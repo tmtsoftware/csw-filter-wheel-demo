@@ -2,9 +2,9 @@ package org.tmt.test.demohcd
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.Behavior
 import csw.framework.CurrentStatePublisher
-import csw.messages.params.generics.Key
-import csw.messages.params.models.Prefix
-import csw.messages.params.states.{CurrentState, StateName}
+import csw.params.core.generics.Key
+import csw.params.core.models.Prefix
+import csw.params.core.states.{CurrentState, StateName}
 
 import scala.concurrent.duration.FiniteDuration
 

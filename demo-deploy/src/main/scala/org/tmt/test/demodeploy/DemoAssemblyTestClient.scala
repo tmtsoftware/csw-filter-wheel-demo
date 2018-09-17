@@ -7,23 +7,23 @@ import akka.stream.ActorMaterializer
 import akka.actor.typed
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, MutableBehavior}
-import csw.services.location.scaladsl.LocationServiceFactory
-import csw.services.logging.scaladsl.{GenericLoggerFactory, LoggingSystemFactory}
 import akka.actor.typed.scaladsl.adapter._
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.Timeout
 import csw.command.scaladsl.CommandService
-import csw.messages.commands.CommandResultType.Negative
-import csw.messages.commands.{CommandResponse, Setup}
-import csw.messages.events._
-import csw.messages.params.formats.JsonSupport
-import csw.messages.params.models.ObsId
-import csw.services.event.EventServiceFactory
-import csw.services.event.api.scaladsl.EventService
-import csw.services.location.api.models.ComponentType.Assembly
-import csw.services.location.api.models.Connection.AkkaConnection
-import csw.services.location.api.models._
-import csw.services.location.commons.ClusterAwareSettings
+import csw.event.EventServiceFactory
+import csw.event.api.scaladsl.EventService
+import csw.location.api.models.ComponentType.Assembly
+import csw.location.api.models.Connection.AkkaConnection
+import csw.location.api.models._
+import csw.location.commons.ClusterAwareSettings
+import csw.location.scaladsl.LocationServiceFactory
+import csw.logging.scaladsl.{GenericLoggerFactory, LoggingSystemFactory}
+import csw.params.commands.CommandResultType.Negative
+import csw.params.commands.{CommandResponse, Setup}
+import csw.params.core.formats.JsonSupport
+import csw.params.core.models.ObsId
+import csw.params.events.{Event, SystemEvent}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -33,8 +33,6 @@ import scala.util.{Failure, Success}
 object DemoAssemblyTestClient extends App {
   // The following imports are just for convenience, to avoid hard-coding the key names, etc.
   import org.tmt.test.demoassembly.DemoAssembly._
-  import org.tmt.test.demohcd.FilterHcd._
-  import org.tmt.test.demohcd.DisperserHcd._
 
   implicit val system: ActorSystem = ClusterAwareSettings.system
 
