@@ -23,13 +23,11 @@ object EventServiceWebClient extends AssemblyJsonSupport {
     val attrs         = List(componentAttr, eventAttr).flatten.mkString("&")
     val attrStr       = if (attrs.isEmpty) "" else s"?$attrs"
     val url           = s"$baseUrl/$subsystem$attrStr"
-    println(s"XXX URL = $url")
-    val client = new EventSource(url)
+    val client        = new EventSource(url)
     client.onmessage = { x =>
       val data = x.data.toString
       if (data.nonEmpty) {
         val event = Json.parse(data).as[Event]
-        println(s"XXX received event $event")
         handler(event)
       }
     }
