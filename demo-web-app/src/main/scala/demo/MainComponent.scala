@@ -6,8 +6,8 @@ import csw.params.commands.{CommandName, CommandResponse, Setup}
 import csw.params.core.generics.{Key, KeyType}
 import csw.params.core.models.{Id, ObsId, Prefix}
 import csw.params.events.{EventName, SystemEvent}
-import demo.util.EventServiceWebClient
-import tmt.ocs.WebClients
+import tmt.ocs.{WebClients, WebGateway}
+import tmt.ocs.client.EventJsClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
@@ -46,10 +46,14 @@ case class MainComponent() extends Component[NoEmit] {
   private val currentDisperser                                 = State(dispersers.head)
   private val filterCommandResponse: State[CommandResponse]    = State(Completed(Id()))
   private val disperserCommandResponse: State[CommandResponse] = State(Completed(Id()))
+  private val title                                            = E.div(A.className("row"), E.div(A.className("col s6  teal lighten-2"), Text(titleStr)))
+  private val gateway                                          = new WebGateway()
+  private val eventClient                                      = new EventJsClient(gateway)
+  private val subsystem                                        = "test"
+  private val eventStream                                      = eventClient.subscribeToEvents(subsystem)
 
-  private val title = E.div(A.className("row"), E.div(A.className("col s6  teal lighten-2"), Text(titleStr)))
-
-  EventServiceWebClient.subscribeToEvents("test") {
+  // Handle events
+  eventStream.onNext = {
     case event: SystemEvent =>
       if (event.eventName == filterEventName) {
         val filter = event.get(filterNameKey).get.head

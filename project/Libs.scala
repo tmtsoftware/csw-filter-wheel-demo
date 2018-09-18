@@ -28,6 +28,7 @@ object ESW {
   private val Version = "0.1.0-SNAPSHOT"
   private val Org     = "org.tmt"
   val `ocs-api`       = dep(Org %%% "ocs-api" % Version)
+  val `react4s-facade`       = dep(Org %%% "react4s-facade" % Version)
 }
 
 object React4s {

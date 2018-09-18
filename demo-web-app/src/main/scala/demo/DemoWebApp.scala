@@ -1,6 +1,6 @@
 package demo
 import com.github.ahnfelt.react4s.Component
-import demo.facade.NpmReactBridge
+import tmt.r4s.facade.NpmReactBridge
 
 object DemoWebApp {
   def main(args: Array[String]): Unit = {
