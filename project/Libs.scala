@@ -17,7 +17,7 @@ object CSW {
 //  private val Org     = "org.tmt"
 
   private val Org     = "com.github.tmtsoftware.csw-prod"
-  private val Version = "c05acca" // Must match version used by esw-prototype and the version of the installed csw-prod services!
+  private val Version = "14df92d73" // Must match version used by esw-prototype and the version of the installed csw-prod services!
 
   val `csw-config-client` = Org %% "csw-config-client" % Version
   val `csw-framework`     = Org %% "csw-framework" % Version

@@ -4,6 +4,8 @@ import com.github.ahnfelt.react4s._
 import csw.params.commands.CommandResponse
 import csw.params.commands.CommandResponse.{Accepted, Completed, Error, Invalid}
 
+import scala.scalajs.js
+
 object FormComboBox {
   // Colors for the icons based on commandResponse
   val normalColor = ""
@@ -50,7 +52,9 @@ case class FormComboBox(labelStr: P[String],
 
     val selectStateIcon  = E.i(A.className(s"material-icons $iconColor"), Text(iconName))
     val selectStateLabel = Text(s" $iconLabel")
-    val selectStateDiv   = E.div(A.className("col s8"), selectStateIcon, selectStateLabel)
+//    val progressPercent = i * 100 / choiceList.size
+//    val progressBar     = E.div(A.className("progress"), E.div(A.className("determinate"), A.style(s"{{width: $progressPercent%}}")))
+    val selectStateDiv = E.div(A.className("col s8"), selectStateIcon, selectStateLabel)
 
     E.div(A.className("row valign-wrapper"), labelDiv, selectDiv, selectStateDiv)
   }

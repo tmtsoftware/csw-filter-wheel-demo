@@ -50,7 +50,7 @@ case class MainComponent() extends Component[NoEmit] {
   private val gateway                                          = new WebGateway()
   private val eventClient                                      = new EventJsClient(gateway)
   private val subsystem                                        = "test"
-  private val eventStream                                      = eventClient.subscribeToEvents(subsystem)
+  private val eventStream                                      = eventClient.subscribe(subsystem)
 
   // Handle events
   eventStream.onNext = {
