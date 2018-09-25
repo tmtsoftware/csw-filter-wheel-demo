@@ -17,7 +17,7 @@ object CSW {
 //  private val Org     = "org.tmt"
 
   private val Org     = "com.github.tmtsoftware.csw-prod"
-  private val Version = "9e653c0bc" // Must match version used by esw-prototype and the version of the installed csw-prod services!
+  private val Version = "fd0a83a74" // Must match version used by esw-prototype and the version of the installed csw-prod services!
 
   val `csw-config-client` = Org %% "csw-config-client" % Version
   val `csw-framework`     = Org %% "csw-framework" % Version
@@ -25,8 +25,12 @@ object CSW {
 }
 
 object ESW {
-  private val Version = "0.1.0-SNAPSHOT"
-  private val Org     = "org.tmt"
+//  private val Version = "0.1.0-SNAPSHOT"
+//  private val Org     = "org.tmt"
+  
+  private val Version = "a11c335"
+  private val Org     = "com.github.tmtsoftware.esw-prototype"
+  
   val `ocs-api`       = dep(Org %%% "ocs-api" % Version)
   val `react4s-facade`       = dep(Org %%% "react4s-facade" % Version)
 }
