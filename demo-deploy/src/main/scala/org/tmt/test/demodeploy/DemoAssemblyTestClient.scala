@@ -22,8 +22,8 @@ import csw.logging.scaladsl.{GenericLoggerFactory, LoggingSystemFactory}
 import csw.params.commands.CommandResultType.Negative
 import csw.params.commands.{CommandResponse, Setup}
 import csw.params.core.formats.JsonSupport
-import csw.params.core.models.ObsId
-import csw.params.events.{Event, SystemEvent}
+import csw.params.core.models.{ObsId, Prefix}
+import csw.params.events.{Event, EventKey, SystemEvent}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -46,6 +46,7 @@ object DemoAssemblyTestClient extends App {
   private val log                     = GenericLoggerFactory.getLogger
   log.info("Starting DemoAssemblyTestClient")
   private val obsId = ObsId("2023-Q22-4-33")
+  val demoEventKey  = EventKey(Prefix("test.DemoAssembly"), demoEventName)
 
   lazy val eventService: EventService =
     new EventServiceFactory().make(locationService)
@@ -62,12 +63,12 @@ object DemoAssemblyTestClient extends App {
     override def onMessage(msg: Event): Behavior[Event] = {
       msg match {
         case e: SystemEvent =>
-          e.get(filterNameKey)
+          e.get(filterKey)
             .foreach { p =>
               val eventValue = p.head
               log.info(s"Received filter event with value: $eventValue")
             }
-          e.get(disperserNameKey)
+          e.get(disperserKey)
             .foreach { p =>
               val eventValue = p.head
               log.info(s"Received disperser event with value: $eventValue")
@@ -81,7 +82,7 @@ object DemoAssemblyTestClient extends App {
   def startSubscribingToEvents(ctx: ActorContext[TrackingEvent]) = {
     val subscriber   = eventService.defaultSubscriber
     val eventHandler = ctx.spawnAnonymous(EventHandler.make())
-    subscriber.subscribeActorRef(Set(filterEventKey, disperserEventKey), eventHandler)
+    subscriber.subscribeActorRef(Set(demoEventKey), eventHandler)
   }
 
   system.spawn(initialBehavior, "DemoAssemblyTestClient")
@@ -115,8 +116,8 @@ object DemoAssemblyTestClient extends App {
   }
 
   private def makeSetup(filter: String, disperser: String): Setup = {
-    val i1 = filterNameKey.set(filter)
-    val i2 = disperserNameKey.set(disperser)
+    val i1 = filterKey.set(filter)
+    val i2 = disperserKey.set(disperser)
     Setup(demoPrefix, demoCmd, Some(obsId)).add(i1).add(i2)
   }
 

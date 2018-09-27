@@ -5,17 +5,11 @@ lazy val `demo-assembly` = project
   .settings(
     libraryDependencies ++= Dependencies.`demo-assembly-deps`
   )
-  .dependsOn(`demo-hcd`)
 
-lazy val `demo-hcd` = project
-  .settings(
-    libraryDependencies ++= Dependencies.`demo-hcd-deps`
-  )
 
 lazy val `demo-deploy` = project
   .dependsOn(
-    `demo-assembly`,
-    `demo-hcd`
+    `demo-assembly`
   )
   .enablePlugins(DeployApp, CswBuildInfo)
   .settings(

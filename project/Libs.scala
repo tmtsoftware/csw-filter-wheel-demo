@@ -35,6 +35,13 @@ object ESW {
   val `react4s-facade`       = dep(Org %%% "react4s-facade" % Version)
 }
 
+object Galil {
+    private val Version = "0.1-SNAPSHOT"
+    private val Org     = "org.tmt"
+
+   val `galil-io` = Org %% "galil-io" % Version
+}
+
 object React4s {
   val `react4s`       = dep("com.github.ahnfelt" %%% "react4s"       % "0.9.15-SNAPSHOT")
   val `router4s`      = dep("com.github.werk"    %%% "router4s"      % "0.1.0-SNAPSHOT")

@@ -3,25 +3,22 @@ package org.tmt.test.demoassembly
 import akka.actor.typed.scaladsl.ActorContext
 import akka.util.Timeout
 import csw.command.messages.TopLevelActorMessage
-import csw.command.models.matchers.DemandMatcherAll
 import csw.command.scaladsl.CommandService
 import csw.framework.models.CswContext
 import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
-import csw.location.api.models.{AkkaLocation, LocationRemoved, LocationUpdated, TrackingEvent}
+import csw.location.api.models.Connection.AkkaConnection
+import csw.location.api.models._
 import csw.params.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnresolvedLocationsIssue, UnsupportedCommandIssue}
-import csw.params.commands.CommandResponse.Error
-import csw.params.commands.{CommandName, CommandResponse, ControlCommand, Setup}
+import csw.params.commands._
 import csw.params.core.generics.{Key, KeyType}
 import csw.params.core.models.Prefix
-import csw.params.core.states.{CurrentState, DemandState, StateName}
+import csw.params.core.states.{CurrentState, StateName}
 import csw.params.events.{EventKey, EventName, SystemEvent}
-import org.tmt.test.demohcd.FilterHcd._
-import org.tmt.test.demohcd.DisperserHcd._
+import csw.proto.galil.io.DataRecord
 
 import scala.concurrent.duration._
 import scala.async.Async.async
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.util.{Failure, Success}
 
 class DemoAssemblyBehaviorFactory extends ComponentBehaviorFactory {
 
@@ -40,20 +37,22 @@ object DemoAssembly {
   // For callers: Must match config file
   val demoPrefix = Prefix("test.DemoAssembly")
 
-  val filterNameKey: Key[String] = KeyType.StringKey.make("filterName")
+  val galilConnection = AkkaConnection(ComponentId("GalilHcd", ComponentType.HCD))
 
-  val filterEventName = EventName("filterEvent")
+  val galilCurrentStateName = StateName("DataRecord")
 
-  val filterEventKey = EventKey(filterPrefix, filterEventName)
+  val referencePositionKey: Key[Int] = KeyType.IntKey.make("referencePosition")
 
-  val disperserNameKey: Key[String] = KeyType.StringKey.make("disperserName")
+  val filterKey: Key[String] = KeyType.StringKey.make("filter")
 
-  val disperserEventName = EventName("disperserEvent")
+  val filterCmd = CommandName("setFilter")
 
-  val disperserEventKey = EventKey(disperserPrefix, disperserEventName)
+  val demoEventName = EventName("demoEvent")
+
+  val disperserKey: Key[String] = KeyType.StringKey.make("disperser")
 
   // XXX TODO: Get these from the config service?
-  val filters = List("None", "g_G0301", "r_G0303", "i_G0302", "z_G0304", "Z_G0322", "Y_G0323", "u_G0308", "BadFilter")
+  val filters = List("None", "g_G0301", "r_G0303", "i_G0302", "z_G0304", "Z_G0322", "Y_G0323", "u_G0308")
   val dispersers =
     List("Mirror", "B1200_G5301", "R831_G5302", "B600_G5303", "B600_G5307", "R600_G5304", "R400_G5305", "R150_G5306")
 }
@@ -73,12 +72,12 @@ class DemoAssemblyHandlers(
   import DemoAssembly._
   import cswCtx._
 
-  implicit val ec: ExecutionContextExecutor             = ctx.executionContext
-  implicit val timeout: Timeout                         = 15.seconds
-  private val log                                       = loggerFactory.getLogger
-  private var maybeFilterHcd: Option[CommandService]    = None
-  private var maybeDisperserHcd: Option[CommandService] = None
-  private val eventPublisher                            = cswCtx.eventService.defaultPublisher
+  implicit val ec: ExecutionContextExecutor         = ctx.executionContext
+  implicit val timeout: Timeout                     = 15.seconds
+  private val log                                   = loggerFactory.getLogger
+  private var maybeGalilHcd: Option[CommandService] = None
+  private val eventPublisher                        = cswCtx.eventService.defaultPublisher
+  val demoEventKey                                  = EventKey(componentInfo.prefix, demoEventName)
 
   override def initialize(): Future[Unit] = async {
     log.debug("Initialize called")
@@ -90,38 +89,44 @@ class DemoAssemblyHandlers(
       case LocationUpdated(location) =>
         val loc = location.asInstanceOf[AkkaLocation]
         loc.connection match {
-          case `filterConnection` =>
-            val filterHcd = new CommandService(loc)(ctx.system)
-            maybeFilterHcd = Some(filterHcd)
-            filterHcd.subscribeOnlyCurrentState(Set(filterStateName), filterStateChanged)
-          case `disperserConnection` =>
-            val disperserHcd = new CommandService(loc)(ctx.system)
-            maybeDisperserHcd = Some(disperserHcd)
-            disperserHcd.subscribeOnlyCurrentState(Set(disperserStateName), disperserStateChanged)
+          case `galilConnection` =>
+            val galilHcd = new CommandService(loc)(ctx.system)
+            maybeGalilHcd = Some(galilHcd)
+            galilHcd.subscribeOnlyCurrentState(Set(galilCurrentStateName), galilStateChanged)
+            val results =
+              List(GalilHelper.init(galilHcd, componentInfo.prefix, 'A'), GalilHelper.init(galilHcd, componentInfo.prefix, 'B'))
+            results.foreach { r =>
+              if (r.resultType != CommandResultType.Positive) log.error(s"Error initializing GalilHcd: $r")
+            }
           case x =>
             log.error(s"Unexpected location received: $x")
         }
       case LocationRemoved(connection) =>
         connection.componentId.name match {
-          case "FilterHcd" =>
-            maybeFilterHcd = None
-          case "DisperserHcd" =>
-            maybeDisperserHcd = None
+          case "GalilHcd" =>
+            maybeGalilHcd = None
           case x =>
             log.error(s"Unexpected location removed: $x")
         }
     }
   }
 
-  private def filterStateChanged(cs: CurrentState): Unit = {
-    val value = cs.get(filterKey).head.head
-    eventPublisher.publish(SystemEvent(filterEventKey.source, filterEventKey.eventName).add(filterNameKey.set(filters(value))))
-  }
+  private def galilStateChanged(cs: CurrentState): Unit = {
+    val dataRecord    = DataRecord(Result(componentInfo.prefix, cs.paramSet))
+    val filterPos     = dataRecord.axisStatuses(0).referencePosition
+    val filterIndex   = (filterPos / 25) % filters.size
+    val currentFilter = filters(filterIndex)
 
-  private def disperserStateChanged(cs: CurrentState): Unit = {
-    val value = cs.get(disperserKey).head.head
+    val disperserPos     = dataRecord.axisStatuses(1).referencePosition
+    val disperserIndex   = (disperserPos / 25) % dispersers.size
+    val currentDisperser = dispersers(disperserIndex)
+
+    log.info(s"Current state: filter: $currentFilter, disperser: $currentDisperser")
+
     eventPublisher.publish(
-      SystemEvent(disperserEventKey.source, disperserEventKey.eventName).add(disperserNameKey.set(dispersers(value)))
+      SystemEvent(demoEventKey.source, demoEventKey.eventName)
+        .add(filterKey.set(currentFilter))
+        .add(disperserKey.set(currentDisperser))
     )
   }
 
@@ -135,7 +140,7 @@ class DemoAssemblyHandlers(
         s.get(key).map { param =>
           val value = param.head
           if (maybeHcd.isEmpty) {
-            CommandResponse.Invalid(controlCommand.runId, UnresolvedLocationsIssue(s"Missing $name HCD"))
+            CommandResponse.Invalid(controlCommand.runId, UnresolvedLocationsIssue(s"Missing Galil HCD"))
           } else {
             if (!choices.contains(value))
               CommandResponse.Invalid(controlCommand.runId, OtherIssue(s"Unknown $name: $value"))
@@ -150,8 +155,8 @@ class DemoAssemblyHandlers(
 
   override def validateCommand(controlCommand: ControlCommand): CommandResponse = {
     val responses = List(
-      validateCommand(controlCommand, "filter", maybeFilterHcd, filterNameKey, filters),
-      validateCommand(controlCommand, "disperser", maybeDisperserHcd, disperserNameKey, dispersers)
+      validateCommand(controlCommand, "filter", maybeGalilHcd, filterKey, filters),
+      validateCommand(controlCommand, "disperser", maybeGalilHcd, disperserKey, dispersers)
     ).flatten
     if (responses.isEmpty)
       CommandResponse.Invalid(controlCommand.runId, MissingKeyIssue(s"Missing required filter or disperser key"))
@@ -163,32 +168,18 @@ class DemoAssemblyHandlers(
     }
   }
 
-  private def onSubmit(controlCommand: Setup,
-                       names: List[String],
-                       prefix: Prefix,
-                       currentStateName: StateName,
-                       commandName: CommandName,
-                       logName: String,
-                       maybeHcd: Option[CommandService],
-                       key: Key[String],
-                       hcdKey: Key[Int]): Unit = {
+  private def handleSubmit(controlCommand: Setup,
+                           axis: Char,
+                           names: List[String],
+                           maybeHcd: Option[CommandService],
+                           key: Key[String]): Unit = {
 
     maybeHcd.foreach { hcd =>
       controlCommand.get(key).foreach { param =>
-        // convert String name passed to assembly to Int encoder value required by HCD
+        // convert String name passed to assembly to Int encoder value (index in list of names...)
         val target = names.indexOf(param.head)
-        val setup  = Setup(componentInfo.prefix, commandName, controlCommand.maybeObsId).add(hcdKey.set(target))
-        commandResponseManager.addSubCommand(controlCommand.runId, setup.runId)
-        val demandMatcher = DemandMatcherAll(DemandState(prefix, currentStateName).add(hcdKey.set(target)), timeout)
-        val response      = hcd.onewayAndMatch(setup, demandMatcher)
-        response.onComplete {
-          case Success(commandResponse) =>
-            log.info(s"Set $logName reponded with $commandResponse")
-            commandResponseManager.updateSubCommand(setup.runId, commandResponse)
-          case Failure(ex) =>
-            log.error(s"Set $logName error", ex = ex)
-            commandResponseManager.updateSubCommand(setup.runId, Error(setup.runId, ex.toString))
-        }
+        GalilHelper
+          .setPosition(hcd, componentInfo.prefix, controlCommand.maybeObsId, axis, target, commandResponseManager, controlCommand)
       }
     }
   }
@@ -198,16 +189,8 @@ class DemoAssemblyHandlers(
 
     controlCommand match {
       case s @ Setup(_, _, `demoCmd`, _, _) =>
-        onSubmit(s, filters, filterPrefix, filterStateName, filterCmd, "filter", maybeFilterHcd, filterNameKey, filterKey)
-        onSubmit(s,
-                 dispersers,
-                 disperserPrefix,
-                 disperserStateName,
-                 disperserCmd,
-                 "disperser",
-                 maybeDisperserHcd,
-                 disperserNameKey,
-                 disperserKey)
+        handleSubmit(s, 'A', filters, maybeGalilHcd, filterKey)
+        handleSubmit(s, 'B', dispersers, maybeGalilHcd, disperserKey)
 
       case x =>
         // Should not happen

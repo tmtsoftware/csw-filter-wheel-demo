@@ -19,6 +19,7 @@ private[demohcd] object WorkerActor {
               numValues: Int,
               targetValue: Int,
               currentValue: Int): Behavior[Int] = Behaviors.receive { (ctx, newTargetValue) =>
+    // Publish the current position
     currentStatePublisher.publish(CurrentState(prefix, currentStateName, Set(key.set(currentValue))))
 
     if (currentValue == newTargetValue) Behaviors.same
