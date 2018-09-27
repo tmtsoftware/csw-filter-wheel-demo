@@ -3,13 +3,15 @@ import akka.util.Timeout
 import csw.command.CommandResponseManager
 import csw.command.models.matchers.StateMatcher
 import csw.command.scaladsl.CommandService
+import csw.logging.scaladsl.Logger
 import csw.params.commands._
 import csw.params.core.generics.{Key, KeyType}
 import csw.params.core.models.{ObsId, Prefix}
 import csw.params.core.states.CurrentState
 import csw.proto.galil.io.DataRecord
 
-import scala.concurrent.Await
+import scala.async.Async.{async, await}
+import scala.concurrent.{Await, ExecutionContext}
 
 object GalilHelper {
   // TODO: Get these values from a galil-prototype dependency?
@@ -43,23 +45,28 @@ object GalilHelper {
 
   // Set the motor's position, where targetPos is the index of the filter or disperer
   def setPosition(hcd: CommandService,
+                  log: Logger,
                   prefix: Prefix,
                   maybeObsId: Option[ObsId],
                   axis: Char,
                   targetPos: Int,
                   commandResponseManager: CommandResponseManager,
-                  parentCmd: Setup)(
-      implicit timeout: Timeout
-  ): Unit = {
+                  parentCmd: Setup)(implicit ec: ExecutionContext, timeout: Timeout): Unit = async {
     // Assumes 200 is full rotation and there are 8 filters...
-    val pos = (targetPos * 25) % 200
-    Await.result(hcd.submit(Setup(prefix, CommandName("setAbsTarget"), None).add(axisKey.set(axis)).add(countsKey.set(pos))),
-                 timeout.duration)
-    val cmd     = Setup(prefix, CommandName("beginMotion"), maybeObsId).add(axisKey.set(axis))
-    val matcher = new GalilStateMatcher(axis, pos)
-    commandResponseManager.addSubCommand(parentCmd.runId, cmd.runId)
-    val resp = Await.result(hcd.onewayAndMatch(cmd, matcher), timeout.duration)
-    commandResponseManager.updateSubCommand(cmd.runId, resp)
+    val pos          = (targetPos * 25) % 200
+    val setAbsTarget = Setup(prefix, CommandName("setAbsTarget"), None).add(axisKey.set(axis)).add(countsKey.set(pos))
+    commandResponseManager.addSubCommand(parentCmd.runId, setAbsTarget.runId)
+    val resp1 = await(hcd.submitAndSubscribe(setAbsTarget))
+    commandResponseManager.updateSubCommand(setAbsTarget.runId, resp1)
+    if (resp1.resultType != CommandResultType.Positive) {
+      log.error(s"setAbsTarget failed: $resp1")
+    } else {
+      val beginMotion = Setup(prefix, CommandName("beginMotion"), maybeObsId).add(axisKey.set(axis))
+      val matcher     = new GalilStateMatcher(axis, pos)
+      commandResponseManager.addSubCommand(parentCmd.runId, beginMotion.runId)
+      val resp = await(hcd.onewayAndMatch(beginMotion, matcher))
+      commandResponseManager.updateSubCommand(beginMotion.runId, resp)
+    }
   }
 
   // Returns the first error or if there are no errors the first response

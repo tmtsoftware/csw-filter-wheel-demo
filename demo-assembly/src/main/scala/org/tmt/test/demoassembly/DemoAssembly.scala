@@ -179,7 +179,14 @@ class DemoAssemblyHandlers(
         // convert String name passed to assembly to Int encoder value (index in list of names...)
         val target = names.indexOf(param.head)
         GalilHelper
-          .setPosition(hcd, componentInfo.prefix, controlCommand.maybeObsId, axis, target, commandResponseManager, controlCommand)
+          .setPosition(hcd,
+                       log,
+                       componentInfo.prefix,
+                       controlCommand.maybeObsId,
+                       axis,
+                       target,
+                       commandResponseManager,
+                       controlCommand)
       }
     }
   }
