@@ -6,8 +6,8 @@ import csw.params.commands.{CommandName, CommandResponse, Setup}
 import csw.params.core.generics.{Key, KeyType}
 import csw.params.core.models.{Id, ObsId, Prefix}
 import csw.params.events.{EventName, SystemEvent}
-import tmt.ocs.{WebClients, WebGateway}
-import tmt.ocs.client.EventJsClient
+import ocs.api.{WebClients, WebGateway}
+import ocs.api.client.EventJsClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}

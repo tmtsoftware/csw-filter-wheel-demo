@@ -7,7 +7,7 @@ addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.5.0")
 addSbtPlugin("com.typesafe.sbt" % "sbt-multi-jvm" % "0.4.0")
 
 // web client
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.24")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.25")
 addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % "0.13.1")
 
 classpathTypes += "maven-plugin"

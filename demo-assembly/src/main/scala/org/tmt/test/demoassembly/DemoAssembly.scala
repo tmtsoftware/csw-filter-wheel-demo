@@ -2,13 +2,15 @@ package org.tmt.test.demoassembly
 
 import akka.actor.typed.scaladsl.ActorContext
 import akka.util.Timeout
-import csw.command.messages.TopLevelActorMessage
-import csw.command.scaladsl.CommandService
+import csw.command.api.scaladsl.CommandService
+import csw.command.client.CommandServiceFactory
+import csw.command.client.messages.TopLevelActorMessage
 import csw.framework.models.CswContext
 import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
 import csw.location.api.models.Connection.AkkaConnection
 import csw.location.api.models._
 import csw.params.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnresolvedLocationsIssue, UnsupportedCommandIssue}
+import csw.params.commands.CommandResponse._
 import csw.params.commands._
 import csw.params.core.generics.{Key, KeyType}
 import csw.params.core.models.Prefix
@@ -63,7 +65,7 @@ object DemoAssembly {
  * For example, if one component sends Submit(Setup(args)) command to DemoHcd,
  * This will be first validated in the supervisor and then forwarded to Component TLA which first invokes validateCommand hook
  * and if validation is successful, then onSubmit hook gets invoked.
- * You can find more information on this here : https://tmtsoftware.github.io/csw-prod/framework.html
+ * You can find more information on this here : https://tmtsoftware.github.io/csw/framework.html
  */
 class DemoAssemblyHandlers(
     ctx: ActorContext[TopLevelActorMessage],
@@ -90,13 +92,14 @@ class DemoAssemblyHandlers(
         val loc = location.asInstanceOf[AkkaLocation]
         loc.connection match {
           case `galilConnection` =>
-            val galilHcd = new CommandService(loc)(ctx.system)
+            val galilHcd = CommandServiceFactory.make(loc)(ctx.system)
             maybeGalilHcd = Some(galilHcd)
-            galilHcd.subscribeOnlyCurrentState(Set(galilCurrentStateName), galilStateChanged)
+            galilHcd.subscribeCurrentState(Set(galilCurrentStateName), galilStateChanged)
             val results =
               List(GalilHelper.init(galilHcd, componentInfo.prefix, 'A'), GalilHelper.init(galilHcd, componentInfo.prefix, 'B'))
-            results.foreach { r =>
-              if (r.resultType != CommandResultType.Positive) log.error(s"Error initializing GalilHcd: $r")
+            results.foreach {
+              case Completed(_) | CompletedWithResult(_, _) =>
+              case r                                        => log.error(s"Error initializing GalilHcd: $r")
             }
           case x =>
             log.error(s"Unexpected location received: $x")
@@ -134,7 +137,7 @@ class DemoAssemblyHandlers(
                               name: String,
                               maybeHcd: Option[CommandService],
                               key: Key[String],
-                              choices: List[String]): Option[CommandResponse] = {
+                              choices: List[String]): Option[ValidateCommandResponse] = {
     controlCommand match {
       case s @ Setup(_, _, `demoCmd`, _, _) =>
         s.get(key).map { param =>
@@ -153,7 +156,7 @@ class DemoAssemblyHandlers(
     }
   }
 
-  override def validateCommand(controlCommand: ControlCommand): CommandResponse = {
+  override def validateCommand(controlCommand: ControlCommand): ValidateCommandResponse = {
     val responses = List(
       validateCommand(controlCommand, "filter", maybeGalilHcd, filterKey, filters),
       validateCommand(controlCommand, "disperser", maybeGalilHcd, disperserKey, dispersers)
@@ -173,35 +176,29 @@ class DemoAssemblyHandlers(
                            names: List[String],
                            maybeHcd: Option[CommandService],
                            key: Key[String]): Unit = {
-
-    maybeHcd.foreach { hcd =>
-      controlCommand.get(key).foreach { param =>
+    // Note that the validation method has already checked that the key is present and the hcd is located
+    controlCommand
+      .get(key)
+      .foreach { param =>
         // convert String name passed to assembly to Int encoder value (index in list of names...)
         val target = names.indexOf(param.head)
         GalilHelper
-          .setPosition(hcd,
-                       log,
-                       componentInfo.prefix,
-                       controlCommand.maybeObsId,
-                       axis,
-                       target,
-                       commandResponseManager,
-                       controlCommand)
+          .setPosition(maybeHcd.get, log, componentInfo.prefix, axis, target, commandResponseManager, controlCommand)
       }
-    }
   }
 
-  override def onSubmit(controlCommand: ControlCommand): Unit = {
+  override def onSubmit(controlCommand: ControlCommand): SubmitResponse = {
     log.debug(s"onSubmit called: $controlCommand")
 
     controlCommand match {
       case s @ Setup(_, _, `demoCmd`, _, _) =>
         handleSubmit(s, 'A', filters, maybeGalilHcd, filterKey)
         handleSubmit(s, 'B', dispersers, maybeGalilHcd, disperserKey)
+        Started(s.runId)
 
       case x =>
         // Should not happen
-        log.error(s"Unsupported command received: $x")
+        Error(controlCommand.runId, s"Unsupported command received: $x")
     }
   }
 

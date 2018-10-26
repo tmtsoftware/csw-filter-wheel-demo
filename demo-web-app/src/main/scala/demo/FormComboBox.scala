@@ -4,8 +4,6 @@ import com.github.ahnfelt.react4s._
 import csw.params.commands.CommandResponse
 import csw.params.commands.CommandResponse.{Accepted, Completed, Error, Invalid}
 
-import scala.scalajs.js
-
 object FormComboBox {
   // Colors for the icons based on commandResponse
   val normalColor = ""

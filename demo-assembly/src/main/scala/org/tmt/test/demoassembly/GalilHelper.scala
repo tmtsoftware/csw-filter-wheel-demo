@@ -1,13 +1,14 @@
 package org.tmt.test.demoassembly
 import akka.util.Timeout
-import csw.command.CommandResponseManager
-import csw.command.models.matchers.StateMatcher
-import csw.command.scaladsl.CommandService
+import csw.command.api.StateMatcher
+import csw.command.api.scaladsl.CommandService
+import csw.command.client.CommandResponseManager
 import csw.logging.scaladsl.Logger
+import csw.params.commands.CommandResponse._
 import csw.params.commands._
 import csw.params.core.generics.{Key, KeyType}
-import csw.params.core.models.{ObsId, Prefix}
-import csw.params.core.states.CurrentState
+import csw.params.core.models.Prefix
+import csw.params.core.states.{CurrentState, StateName}
 import csw.proto.galil.io.DataRecord
 
 import scala.async.Async.{async, await}
@@ -24,22 +25,33 @@ object GalilHelper {
   // Initialize the Galil device
   def init(hcd: CommandService, prefix: Prefix, axis: Char)(implicit timeout: Timeout): CommandResponse = {
     val commands = List(
+      // MO
       Setup(prefix, CommandName("motorOff"), None).add(axisKey.set(axis)),
+      // DP
       Setup(prefix, CommandName("setMotorPosition"), None).add(axisKey.set(axis)).add(countsKey.set(0)),
+      // PT
       Setup(prefix, CommandName("setPositionTracking"), None).add(axisKey.set(axis)).add(countsKey.set(0)),
+      // MT - Motor Type (stepper)
       Setup(prefix, CommandName("setMotorType"), None).add(axisKey.set(axis)).add(countsKey.set(2)),
+      // AG - Amplifier Gain: Maximum current 1.4A
       Setup(prefix, CommandName("setAmplifierGain"), None).add(axisKey.set(axis)).add(countsKey.set(2)),
-      Setup(prefix, CommandName("setStepDriveResolution"), None).add(axisKey.set(axis)).add(countsKey.set(1)),
+      // YB
       Setup(prefix, CommandName("setStepMotorResolution"), None).add(axisKey.set(axis)).add(countsKey.set(200)),
+      // KS
       Setup(prefix, CommandName("setMotorSmoothing"), None).add(axisKey.set(axis)).add(smoothKey.set(8)),
+      // AC
       Setup(prefix, CommandName("setAcceleration"), None).add(axisKey.set(axis)).add(countsKey.set(1024)),
+      // DC
       Setup(prefix, CommandName("setDeceleration"), None).add(axisKey.set(axis)).add(countsKey.set(1024)),
+      // LC - Low current mode.  setting is a guess.
       Setup(prefix, CommandName("setLowCurrent"), None).add(axisKey.set(axis)).add(lcParamKey.set(2)),
+      // SH
       Setup(prefix, CommandName("motorOn"), None).add(axisKey.set(axis)),
+      // SP - set speed in steps per second
       Setup(prefix, CommandName("setMotorSpeed"), None).add(axisKey.set(axis)).add(speedKey.set(25)),
     )
 
-    val responses = commands.map(cmd => Await.result(hcd.submitAndSubscribe(cmd), timeout.duration))
+    val responses = Await.result(hcd.submitAll(commands), timeout.duration)
     returnResponse(responses)
   }
 
@@ -47,38 +59,45 @@ object GalilHelper {
   def setPosition(hcd: CommandService,
                   log: Logger,
                   prefix: Prefix,
-                  maybeObsId: Option[ObsId],
                   axis: Char,
                   targetPos: Int,
                   commandResponseManager: CommandResponseManager,
                   parentCmd: Setup)(implicit ec: ExecutionContext, timeout: Timeout): Unit = async {
     // Assumes 200 is full rotation and there are 8 filters...
-    val pos          = (targetPos * 25) % 200
-    val setAbsTarget = Setup(prefix, CommandName("setAbsTarget"), None).add(axisKey.set(axis)).add(countsKey.set(pos))
+    val pos = (targetPos * 25) % 200
+    val setAbsTarget =
+      Setup(prefix, CommandName("setAbsTarget"), parentCmd.maybeObsId).add(axisKey.set(axis)).add(countsKey.set(pos))
     commandResponseManager.addSubCommand(parentCmd.runId, setAbsTarget.runId)
-    val resp1 = await(hcd.submitAndSubscribe(setAbsTarget))
-    commandResponseManager.updateSubCommand(setAbsTarget.runId, resp1)
-    if (resp1.resultType != CommandResultType.Positive) {
-      log.error(s"setAbsTarget failed: $resp1")
-    } else {
-      val beginMotion = Setup(prefix, CommandName("beginMotion"), maybeObsId).add(axisKey.set(axis))
-      val matcher     = new GalilStateMatcher(axis, pos)
-      commandResponseManager.addSubCommand(parentCmd.runId, beginMotion.runId)
-      val resp = await(hcd.onewayAndMatch(beginMotion, matcher))
-      commandResponseManager.updateSubCommand(beginMotion.runId, resp)
+    val resp1 = await(hcd.submit(setAbsTarget))
+    resp1 match {
+      case Completed(_) =>
+        val beginMotion = Setup(prefix, CommandName("beginMotion"), parentCmd.maybeObsId).add(axisKey.set(axis))
+        val matcher     = new GalilStateMatcher(axis, pos)
+        commandResponseManager.addSubCommand(parentCmd.runId, beginMotion.runId)
+        commandResponseManager.updateSubCommand(setAbsTarget.runId, resp1)
+        val resp = await(hcd.onewayAndMatch(beginMotion, matcher))
+        commandResponseManager.updateSubCommand(beginMotion.runId, resp.asInstanceOf[SubmitResponse])
+
+      case _ =>
+        commandResponseManager.updateSubCommand(setAbsTarget.runId, resp1)
     }
   }
 
   // Returns the first error or if there are no errors the first response
   private def returnResponse(responses: List[CommandResponse]): CommandResponse = {
-    responses.find(_.resultType != CommandResultType.Positive).getOrElse(responses.head)
+    responses
+      .find {
+        case Completed(_) | CompletedWithResult(_, _) => false
+        case _                                        => true
+      }
+      .getOrElse(responses.head)
   }
 
   class GalilStateMatcher(axis: Char, pos: Int)(implicit val timeout: Timeout) extends StateMatcher {
-    override def prefix: String    = "galil.hcd"
-    override def stateName: String = "DataRecord"
+    override def prefix: Prefix       = Prefix("galil.hcd")
+    override def stateName: StateName = StateName("DataRecord")
     override def check(cs: CurrentState): Boolean = {
-      val dataRecord = DataRecord(Result(Prefix(prefix), cs.paramSet))
+      val dataRecord = DataRecord(Result(Prefix(prefix.prefix), cs.paramSet))
       val index      = axis - 'A'
       val currentPos = dataRecord.axisStatuses(index).referencePosition
       println(s"XXX axis $axis: want $pos, have $currentPos")

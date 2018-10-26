@@ -15,10 +15,10 @@ The project has the following parts:
 
 ## Prerequisites
 
-This project depends on csw-prod and esw-prototype. The version of csw-prod must be the same as the one used by esw-prototype.
-At present, this is set to Git commit identifier. Use this to also check out that version of csw-prod and install the services:
+This project depends on csw and esw-prototype. The version of csw must be the same as the one used by esw-prototype.
+At present, this is set to Git commit identifier. Use this to also check out that version of csw and install the services:
 
-    cd ../csw-prod
+    cd ../csw
     git checkout <sha>
     sbt publishLocal stage
 
@@ -26,7 +26,6 @@ Start the CSW services:
     
     export interfaceName=... # Set to the ethernet interface to use for networking
     csw-services.sh start
-    export clusterSeeds=... # See output from above command. Use this setting for all of the following commands.
 
 Compile the esw-prototype dependencies and install and run the `ocs-gateway`, which provides access to the CSW services for web apps:
  
@@ -39,7 +38,7 @@ Compile the esw-prototype dependencies and install and run the `ocs-gateway`, wh
 Building this project consists of installing the script used to start the assembly and HCDs as well as compiling the Scala.js code to JavaScript and starting a test HTTP server:
 
     sbt 
-    > publishLocal stage
+    > stage
     > fastOptJS::startWebpackDevServer
     > fastOptJS::webpack
 
@@ -50,7 +49,7 @@ See https://github.com/webpack/webpack/issues/4518 for more information.
 
 A config file is provided for start the assembly and HCDs on the local host:
 
-    target/universal/stage/bin/demo-container-cmd-app --local demo-deploy/src/main/resources/DemoContainer.conf
+    target/universal/stage/bin/demo-container-cmd-app --local demo-deploy/src/main/resources/GalilDemo.conf
 
 At this point you can access the web app at http://localhost:8080/.
 

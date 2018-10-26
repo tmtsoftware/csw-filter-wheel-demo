@@ -3,7 +3,7 @@ import Def.{setting => dep}
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 object Libs {
-  val ScalaVersion = "2.12.6"
+  val ScalaVersion = "2.12.7"
 
   val `scalatest`       = "org.scalatest"          %% "scalatest"      % "3.0.5"  //Apache License 2.0
   val `scala-async`     = "org.scala-lang.modules" %% "scala-async"    % "0.9.7"  //BSD 3-clause "New" or "Revised" License
@@ -13,11 +13,9 @@ object Libs {
 }
 
 object CSW {
-//  private val Version = "0.1-SNAPSHOT"
-//  private val Org     = "org.tmt"
-
-  private val Org     = "com.github.tmtsoftware.csw-prod"
-  private val Version = "fd0a83a74" // Must match version used by esw-prototype and the version of the installed csw-prod services!
+  private val Org     = "com.github.tmtsoftware.csw"
+  //  private val Version = "0.1-SNAPSHOT"
+  private val Version = "3925a61c4" // Must match version used by esw-prototype and the version of the installed csw services!
 
   val `csw-config-client` = Org %% "csw-config-client" % Version
   val `csw-framework`     = Org %% "csw-framework" % Version
@@ -25,19 +23,18 @@ object CSW {
 }
 
 object ESW {
+  private val Org = "com.github.tmtsoftware.esw-prototype"
 //  private val Version = "0.1.0-SNAPSHOT"
-//  private val Org     = "org.tmt"
-  
-  private val Version = "a11c335"
-  private val Org     = "com.github.tmtsoftware.esw-prototype"
-  
+  private val Version = "ca924b6"
+
   val `ocs-api`       = dep(Org %%% "ocs-api" % Version)
   val `react4s-facade`       = dep(Org %%% "react4s-facade" % Version)
 }
 
 object Galil {
-    private val Version = "0.1-SNAPSHOT"
-    private val Org     = "org.tmt"
+    private val Org     = "com.github.tmtsoftware.galil-prototype"
+      private val Version = "0.1-SNAPSHOT"
+//  private val Version = "f2466a1"
 
    val `galil-io` = Org %% "galil-io" % Version
 }
