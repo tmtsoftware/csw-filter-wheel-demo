@@ -74,12 +74,12 @@ object GalilHelper {
         val beginMotion = Setup(prefix, CommandName("beginMotion"), parentCmd.maybeObsId).add(axisKey.set(axis))
         val matcher     = new GalilStateMatcher(axis, pos)
         commandResponseManager.addSubCommand(parentCmd.runId, beginMotion.runId)
-        commandResponseManager.updateSubCommand(setAbsTarget.runId, resp1)
+        commandResponseManager.updateSubCommand(resp1)
         val resp = await(hcd.onewayAndMatch(beginMotion, matcher))
-        commandResponseManager.updateSubCommand(beginMotion.runId, resp.asInstanceOf[SubmitResponse])
+        commandResponseManager.updateSubCommand(resp.asInstanceOf[SubmitResponse])
 
       case _ =>
-        commandResponseManager.updateSubCommand(setAbsTarget.runId, resp1)
+        commandResponseManager.updateSubCommand(resp1)
     }
   }
 
