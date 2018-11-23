@@ -98,7 +98,7 @@ object GalilHelper {
     override def stateName: StateName = StateName("DataRecord")
     override def check(cs: CurrentState): Boolean = {
       val dataRecord = DataRecord(Result(Prefix(prefix.prefix), cs.paramSet))
-      val index      = axis - 'A'
+      val index      = axis - 'A' // XXX TODO FIXME: Could be more complicated if any previous axis is missing...
       val currentPos = dataRecord.axisStatuses(index).referencePosition
       println(s"XXX axis $axis: want $pos, have $currentPos")
       currentPos == pos
