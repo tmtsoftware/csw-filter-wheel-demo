@@ -12,15 +12,4 @@ addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % "0.13.1")
 
 classpathTypes += "maven-plugin"
 
-scalacOptions ++= Seq(
-  "-encoding",
-  "UTF-8",
-  "-feature",
-  "-unchecked",
-  "-deprecation",
-  "-Xlint",
-  "-Yno-adapted-args",
-  "-Ywarn-dead-code",
-  "-Xfuture"
-)
 

@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.actor.typed
 import akka.actor.typed.Behavior
-import akka.actor.typed.scaladsl.{ActorContext, Behaviors, MutableBehavior}
+import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.scaladsl.adapter._
 import akka.util.Timeout
 import csw.command.api.scaladsl.CommandService
@@ -55,7 +55,7 @@ object DemoAssemblyTestClient extends App {
     }
   }
 
-  class EventHandler(ctx: ActorContext[Event]) extends MutableBehavior[Event] {
+  class EventHandler(ctx: ActorContext[Event]) extends AbstractBehavior[Event] {
     override def onMessage(msg: Event): Behavior[Event] = {
       msg match {
         case e: SystemEvent =>
