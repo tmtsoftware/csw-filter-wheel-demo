@@ -14,8 +14,7 @@ object Libs {
 
 object CSW {
   private val Org     = "com.github.tmtsoftware.csw"
-    private val Version = "0.1-SNAPSHOT"
-//  private val Version = "ef09b11" // Must match version used by esw-prototype and the version of the installed csw services!
+  private val Version = "v0.6.0" //change this to 0.1-SNAPSHOT to test with local csw changes (after publishLocal)
 
   val `csw-config-client` = Org %% "csw-config-client" % Version
   val `csw-framework`     = Org %% "csw-framework" % Version
@@ -33,8 +32,8 @@ object ESW {
 
 object Galil {
     private val Org     = "com.github.tmtsoftware.galil-prototype"
-      private val Version = "0.1-SNAPSHOT"
-//  private val Version = "f2466a1"
+//      private val Version = "0.1-SNAPSHOT"
+    private val Version = "v0.6.0"
 
    val `galil-io` = Org %% "galil-io" % Version
 }
