@@ -28,12 +28,10 @@ lazy val `demo-web-app` = project
     scalacOptions += "-P:scalajs:sjsDefinedByDefault",
     libraryDependencies ++= Seq(
       React4s.`react4s`.value,
-      React4s.`router4s`.value,
       Utils.`play-json`.value,
       Utils.`enumeratum`.value,
       Utils.`enumeratum-play-json`.value,
-      ESW.`ocs-api`.value,
-      ESW.`react4s-facade`.value
+      ESW.`esw-ocs-api`.value
     ),
     version in webpack := "4.8.1",
     version in startWebpackDevServer := "3.1.4",

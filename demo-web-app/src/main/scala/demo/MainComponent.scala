@@ -6,8 +6,6 @@ import csw.params.commands.{CommandName, CommandResponse, Setup}
 import csw.params.core.generics.{Key, KeyType}
 import csw.params.core.models.{Id, ObsId, Prefix}
 import csw.params.events.{EventName, SystemEvent}
-import ocs.api.{WebClients, WebGateway}
-import ocs.api.client.EventJsClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
@@ -23,7 +21,7 @@ object MainComponent {
   val disperserKey: Key[String] = KeyType.StringKey.make("disperser")
   val disperser                 = "Disperser"
 
-  val demoEventName = EventName("demoEvent")
+  val demoEventName: EventName = EventName("demoEvent")
 
   val assemblyName = "DemoAssembly"
 

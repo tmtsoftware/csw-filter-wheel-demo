@@ -3,13 +3,13 @@ import akka.util.Timeout
 import csw.command.api.StateMatcher
 import csw.command.api.scaladsl.CommandService
 import csw.command.client.CommandResponseManager
-import csw.logging.scaladsl.Logger
 import csw.params.commands.CommandResponse._
 import csw.params.commands._
 import csw.params.core.generics.{Key, KeyType}
 import csw.params.core.models.Prefix
 import csw.params.core.states.{CurrentState, StateName}
 import csw.proto.galil.io.DataRecord
+import csw.logging.api.scaladsl.Logger
 
 import scala.async.Async.{async, await}
 import scala.concurrent.{Await, ExecutionContext}
@@ -51,7 +51,7 @@ object GalilHelper {
       Setup(prefix, CommandName("setMotorSpeed"), None).add(axisKey.set(axis)).add(speedKey.set(25)),
     )
 
-    val responses = Await.result(hcd.submitAll(commands), timeout.duration)
+    val responses = Await.result(hcd.submitAllAndWait(commands), timeout.duration)
     returnResponse(responses)
   }
 

@@ -7,11 +7,18 @@ import csw.command.client.CommandServiceFactory
 import csw.command.client.messages.TopLevelActorMessage
 import csw.framework.models.CswContext
 import csw.framework.scaladsl.{ComponentBehaviorFactory, ComponentHandlers}
-import csw.location.api.models.Connection.AkkaConnection
-import csw.location.api.models._
+import csw.location.models.{AkkaLocation, ComponentId, ComponentType, LocationRemoved, LocationUpdated, TrackingEvent}
+import csw.location.models.Connection.AkkaConnection
 import csw.params.commands.CommandIssue.{MissingKeyIssue, OtherIssue, UnresolvedLocationsIssue, UnsupportedCommandIssue}
-import csw.params.commands.CommandResponse._
-import csw.params.commands._
+import csw.params.commands.{CommandName, CommandResponse, ControlCommand, Result, Setup}
+import csw.params.commands.CommandResponse.{
+  Completed,
+  CompletedWithResult,
+  Error,
+  Started,
+  SubmitResponse,
+  ValidateCommandResponse
+}
 import csw.params.core.generics.{Key, KeyType}
 import csw.params.core.models.Prefix
 import csw.params.core.states.{CurrentState, StateName}
@@ -34,22 +41,22 @@ class DemoAssemblyBehaviorFactory extends ComponentBehaviorFactory {
 
 object DemoAssembly {
   // Name of command sent to this assembly to set filter and disperser values
-  val demoCmd = CommandName("demo")
+  val demoCmd: CommandName = CommandName("demo")
 
   // For callers: Must match config file
-  val demoPrefix = Prefix("test.DemoAssembly")
+  val demoPrefix: Prefix = Prefix("test.DemoAssembly")
 
-  val galilConnection = AkkaConnection(ComponentId("GalilHcd", ComponentType.HCD))
+  val galilConnection: AkkaConnection = AkkaConnection(ComponentId("GalilHcd", ComponentType.HCD))
 
-  val galilCurrentStateName = StateName("DataRecord")
+  val galilCurrentStateName: StateName = StateName("DataRecord")
 
   val referencePositionKey: Key[Int] = KeyType.IntKey.make("referencePosition")
 
   val filterKey: Key[String] = KeyType.StringKey.make("filter")
 
-  val filterCmd = CommandName("setFilter")
+  val filterCmd: CommandName = CommandName("setFilter")
 
-  val demoEventName = EventName("demoEvent")
+  val demoEventName: EventName = EventName("demoEvent")
 
   val disperserKey: Key[String] = KeyType.StringKey.make("disperser")
 
@@ -79,7 +86,7 @@ class DemoAssemblyHandlers(
   private val log                                   = loggerFactory.getLogger
   private var maybeGalilHcd: Option[CommandService] = None
   private val eventPublisher                        = cswCtx.eventService.defaultPublisher
-  val demoEventKey                                  = EventKey(componentInfo.prefix, demoEventName)
+  val demoEventKey: EventKey                        = EventKey(componentInfo.prefix, demoEventName)
 
   override def initialize(): Future[Unit] = async {
     log.debug("Initialize called")

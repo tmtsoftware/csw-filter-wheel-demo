@@ -4,17 +4,11 @@ object Dependencies {
 
   val `demo-assembly-deps` = Seq(
     CSW.`csw-framework`,
-    Galil.`galil-io`,
-    Libs.`scalatest` % Test,
-    Libs.`junit` % Test,
-    Libs.`junit-interface` % Test
+    Galil.`galil-io`
   )
 
   val `demo-hcd-deps` = Seq(
-    CSW.`csw-framework`,
-    Libs.`scalatest` % Test,
-    Libs.`junit` % Test,
-    Libs.`junit-interface` % Test
+    CSW.`csw-framework`
   )
 
   val `demo-deploy-deps` = Seq(

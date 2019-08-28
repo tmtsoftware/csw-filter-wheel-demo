@@ -1,6 +1,5 @@
-import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
 import sbt.Keys._
-import sbt.{Resolver, url, _}
+import sbt._
 import sbt.plugins.JvmPlugin
 
 object Common extends AutoPlugin {
@@ -15,17 +14,15 @@ object Common extends AutoPlugin {
     scalaVersion := Libs.ScalaVersion,
     organizationHomepage := Some(url("http://www.tmt.org")),
     updateOptions := updateOptions.value.withLatestSnapshots(false),
-    
+
     scalacOptions ++= Seq(
       "-encoding",
       "UTF-8",
       "-feature",
       "-unchecked",
       "-deprecation",
-      "-Xlint",
-      "-Yno-adapted-args",
-      "-Ywarn-dead-code",
-      "-Xfuture"
+      "-Xlint:_,-missing-interpolator",
+      "-Ywarn-dead-code"
     ),
     javacOptions in (Compile, doc) ++= Seq("-Xdoclint:none"),
     testOptions in Test ++= Seq(
@@ -36,14 +33,9 @@ object Common extends AutoPlugin {
       Tests.Argument(TestFrameworks.JUnit, "-v", "-a")
     ),
     resolvers += "jitpack" at "https://jitpack.io",
+    resolvers += "bintray" at "http://jcenter.bintray.com",
     version := "0.0.1",
     parallelExecution in Test := false,
-    autoCompilerPlugins := true,
-    if (formatOnCompile) scalafmtOnCompile := true else scalafmtOnCompile := false
+    autoCompilerPlugins := true
   )
-
-  private def formatOnCompile = sys.props.get("format.on.compile") match {
-    case Some("false") ⇒ false
-    case _             ⇒ true
-  }
 }

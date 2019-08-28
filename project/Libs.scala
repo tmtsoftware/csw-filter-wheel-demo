@@ -3,18 +3,15 @@ import Def.{setting => dep}
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 object Libs {
-  val ScalaVersion = "2.12.7"
+  val ScalaVersion = "2.13.0"
 
-  val `scalatest`       = "org.scalatest"          %% "scalatest"      % "3.0.5"  //Apache License 2.0
-  val `scala-async`     = "org.scala-lang.modules" %% "scala-async"    % "0.9.7"  //BSD 3-clause "New" or "Revised" License
-  val `junit`           = "junit"                  % "junit"           % "4.12"   //Eclipse Public License 1.0
-  val `junit-interface` = "com.novocode"           % "junit-interface" % "0.11"   //BSD 2-clause "Simplified" License
-  val `mockito-core`    = "org.mockito"            % "mockito-core"    % "2.21.0" //MIT License
+  val `scala-async` = "org.scala-lang.modules" %% "scala-async" % "0.10.0" //BSD 3-clause "New" or "Revised" License
 }
 
 object CSW {
   private val Org     = "com.github.tmtsoftware.csw"
-  private val Version = "v0.6.0" //change this to 0.1-SNAPSHOT to test with local csw changes (after publishLocal)
+//  private val Version = "0.1-SNAPSHOT"
+  private val Version = "v1.0.0-RC4"
 
   val `csw-config-client` = Org %% "csw-config-client" % Version
   val `csw-framework`     = Org %% "csw-framework" % Version
@@ -22,30 +19,26 @@ object CSW {
 }
 
 object ESW {
-  private val Org = "com.github.tmtsoftware.esw-prototype"
-  private val Version = "0.1.0-SNAPSHOT"
-//  private val Version = "cb257b8"
+  private val Org     = "com.github.tmtsoftware.esw"
+  private val Version = "0.1-SNAPSHOT"
 
-  val `ocs-api`       = dep(Org %%% "ocs-api" % Version)
-  val `react4s-facade`       = dep(Org %%% "react4s-facade" % Version)
+  val `esw-ocs-api` = dep(Org %%% "esw-ocs-api" % Version)
 }
 
 object Galil {
-    private val Org     = "com.github.tmtsoftware.galil-prototype"
-//      private val Version = "0.1-SNAPSHOT"
-    private val Version = "v0.6.0"
+  private val Org     = "com.github.tmtsoftware.galil-prototype"
+  private val Version = "0.1-SNAPSHOT"
 
-   val `galil-io` = Org %% "galil-io" % Version
+  val `galil-io` = Org %% "galil-io" % Version
 }
 
 object React4s {
-  val `react4s`       = dep("com.github.ahnfelt" %%% "react4s"       % "0.9.15-SNAPSHOT")
-  val `router4s`      = dep("com.github.werk"    %%% "router4s"      % "0.1.0-SNAPSHOT")
+  val `react4s`       = dep("com.github.ahnfelt" %%% "react4s"       % "0.9.27-SNAPSHOT")
   val `jquery-facade` = dep("org.querki"         %%% "jquery-facade" % "1.2")
 }
 
 object Utils {
-  val `play-json`            = dep("com.typesafe.play" %%% "play-json"            % "2.6.10") //Apache 2.0
+  val `play-json`            = dep("com.typesafe.play" %%% "play-json"            % "2.7.4") //Apache 2.0
   val `enumeratum`           = dep("com.beachape"      %%% "enumeratum"           % "1.5.13")
-  val `enumeratum-play-json` = dep("com.beachape"      %%% "enumeratum-play-json" % "1.5.14")
+  val `enumeratum-play-json` = dep("com.beachape"      %%% "enumeratum-play-json" % "1.5.16")
 }

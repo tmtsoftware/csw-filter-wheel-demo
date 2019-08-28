@@ -25,7 +25,7 @@ case class FormComboBox(labelStr: P[String],
 
   import FormComboBox._
 
-  val targetState = State("")
+  val targetState: State[String] = State("")
 
   override def render(get: Get): Element = {
     val label        = get(labelStr)
