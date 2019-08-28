@@ -83,6 +83,7 @@ case class MainComponent() extends Component[NoEmit] {
   private def commandResponseStateVariable(name: String) =
     if (name == filter) filterCommandResponse else disperserCommandResponse
 
+  // XXX TODO FIXME: Waiting for progress in esw to support scala.js command client!
   private def itemSelected(name: String, value: String): Unit = {
     val assemblyClient = WebClients.assemblyCommandClient(assemblyName)
     val setup = if (name == filter) {
